@@ -1,5 +1,6 @@
 module;
 
+#include <string_view>
 #include <type_traits>
 
 #include "macro.h"
@@ -38,6 +39,8 @@ export namespace graph_resolver
         virtual ModIdView GetPostDeps() const = 0;
         virtual void* GetInterfacePtr() const = 0;
         virtual void DestroySelf() = 0;
+        virtual StringView GetInterfaceName() const = 0;
+        virtual StringView GetTypeName() const = 0;    
     protected:
         virtual ~ModuleSlotBase() = default;
     };
@@ -73,7 +76,16 @@ export namespace graph_resolver
         ModIdView GetPostDeps() const override {return POSTDEPS::get();}
         void* GetInterfacePtr() const override {return static_cast<I*>(m_ModulePtr);}
         void DestroySelf() override {delete this;}
-
+        StringView GetInterfaceName() const override 
+        {
+            std::string_view view = GET_TYPE_NAME(I);
+            return {view.data(), view.size()};
+        }
+        StringView GetTypeName() const override 
+        {
+            std::string_view view = GET_TYPE_NAME(T);
+            return {view.data(), view.size()};
+        }
     private:    
         ~ModuleSlot() override
         {
@@ -97,18 +109,25 @@ export namespace graph_resolver
             typename DEPS = TypeList<>,
             typename POSTDEPS = TypeList<>
             >
-        void AddModule(
+        GraphResult AddModule(
             ConstructFn<T> construct,
             PostConstructFn<T> post_construct = nullptr,
             DestructFn<T> destruct = DefaultDestruct<T>) 
         {
             modid_t indx = hash_string(GET_TYPE_NAME(I));
+            std::string_view view = GET_TYPE_NAME(T);
+            if(HasModule(indx)){
+                return {GraphErrorCode::DuplicateModuleID, {view.data(), view.size()}}; 
+            }
+
             ModuleSlotBase* module_base = new ModuleSlot<I, T, DEPS, POSTDEPS>(
                 std::move(construct), std::move(post_construct), std::move(destruct));
             AddModule(indx, module_base);
+            return {GraphErrorCode::Success};
         }
 
-        void CompileGraph();
+        
+        GraphResult CompileGraph();
         void ExecuteGraph();
         void DestructInOrder();
         void DestroyGraph();
@@ -126,5 +145,6 @@ export namespace graph_resolver
 
         void* GetModuleInt(modid_t indx);
         void AddModule(modid_t indx, ModuleSlotBase* module_base);
+        bool HasModule(modid_t indx);
     };
 }

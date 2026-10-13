@@ -1,5 +1,6 @@
 module;
 
+#include <cstdint>
 #include <string_view>
 
 #include "macro.h"
@@ -18,7 +19,14 @@ export namespace graph_core {
 
     using modid_t = uint64_t;
 
-    template<typename T>
+    enum class GraphErrorCode : uint8_t
+    {
+        Success = 0,
+        CycleDetected,
+        DuplicateModuleID
+    };
+
+template<typename T>
     struct MySpan
     {
         const T* data;
@@ -31,6 +39,15 @@ export namespace graph_core {
     };
 
     using ModIdView = MySpan<modid_t>;
+    using StringView = MySpan<const char>;
+    struct GraphResult
+    {
+        GraphErrorCode code;
+        StringView mod_name;
+
+        bool IsOk() const {return code == GraphErrorCode::Success;}
+        operator bool() const {return IsOk();}
+    };
 
     template<class... T>
     struct TypeList

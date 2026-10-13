@@ -47,3 +47,4 @@ target_link_libraries(graph_resolver
 )
 
 add_subdirectory(examples/first)
+add_subdirectory(examples/second)

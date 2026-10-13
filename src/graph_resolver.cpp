@@ -15,7 +15,7 @@ namespace graph_resolver
     using OrderType = std::vector<modid_t>;
     // --------------------------------------------------------------------
 
-    static void MakeGraph(const ModuleMapType& module_slots,
+    static GraphResult MakeGraph(const ModuleMapType& module_slots,
             OrderType& exec_order,
             std::function<const ModIdView(const ModuleSlotBase*)> get_func);
 
@@ -50,12 +50,17 @@ namespace graph_resolver
         }
     }
 
-    void GraphResolver::CompileGraph()
+    GraphResult GraphResolver::CompileGraph()
     {
-        MakeGraph(m_Impl->moduleSlots, m_Impl->initOrder, 
+        const auto init_success = MakeGraph(m_Impl->moduleSlots, m_Impl->initOrder, 
             [](const ModuleSlotBase* mod_slot){return mod_slot->GetDeps();});
-        MakeGraph(m_Impl->moduleSlots, m_Impl->postInitOrder, 
-            [](const ModuleSlotBase* mod_slot){return mod_slot->GetPostDeps();});   
+        if(!init_success) return init_success;
+        
+        const auto post_init_success = MakeGraph(m_Impl->moduleSlots, m_Impl->postInitOrder, 
+            [](const ModuleSlotBase* mod_slot){return mod_slot->GetPostDeps();});
+        if(!post_init_success) return post_init_success;
+        
+        return {GraphErrorCode::Success};
     }
 
     void GraphResolver::ExecuteGraph()
@@ -81,7 +86,7 @@ namespace graph_resolver
         m_Impl->Clear();
     }
 
-    void MakeGraph(const ModuleMapType& module_slots,
+    GraphResult MakeGraph(const ModuleMapType& module_slots,
             OrderType& exec_order,
             std::function<const ModIdView(const ModuleSlotBase*)> get_func)
     {
@@ -121,16 +126,19 @@ namespace graph_resolver
         // 4. Final check
         if (exec_order.size() != module_slots.size())
         {
-            OrderType not_ordered;
+            StringView trouble_mod_name;
             for(const auto&[id, mod]: module_slots)
             {
                 auto it = std::ranges::find(exec_order, id);
                 if(it == exec_order.end())
                 {
-                    not_ordered.push_back(id);
+                    trouble_mod_name = mod->GetInterfaceName();
+                    break;
                 }
             }
+            return {GraphErrorCode::CycleDetected, trouble_mod_name};
         }
+        return {GraphErrorCode::Success};
     }
 
     // -------------- Private methods -----------------
@@ -147,5 +155,10 @@ namespace graph_resolver
     void GraphResolver::AddModule(modid_t indx, ModuleSlotBase *module_base)
     {
         m_Impl->moduleSlots[indx] = module_base;
+    }
+
+    bool GraphResolver::HasModule(modid_t indx)
+    {
+        return m_Impl->moduleSlots.contains(indx);
     }
 }
