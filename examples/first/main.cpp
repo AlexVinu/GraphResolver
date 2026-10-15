@@ -3,7 +3,7 @@
 #include <iostream>
 #include <string>
 
-#include <graph_resolver/headers/graph_resolver.h>
+#include <graph_resolver/graph_resolver.h>
 
 using namespace std;
 

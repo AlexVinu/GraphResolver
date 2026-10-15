@@ -36,8 +36,8 @@ target_sources(graph_resolver
         BASE_DIRS
             "${CMAKE_CURRENT_SOURCE_DIR}/include"
         FILES
-            include/graph_resolver/headers/graph_resolver.h
-            include/graph_resolver/headers/core.h
+            include/graph_resolver/graph_resolver.h
+            include/graph_resolver/core.h
 
             include/graph_resolver/utils/macro.h
             include/graph_resolver/utils/my_span.h
@@ -47,6 +47,8 @@ target_sources(graph_resolver
 target_include_directories(graph_resolver
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/utils"
 )
 
 # Linking externals

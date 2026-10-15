@@ -1,9 +1,9 @@
 #pragma once
 
 #include <cstdint>
-#include "graph_resolver/utils/my_span.h"
-#include "graph_resolver/utils/macro.h"
-#include "graph_resolver/utils/hash_string.h"
+#include "utils/my_span.h"
+#include "utils/macro.h"
+#include "utils/hash_string.h"
 
 namespace graph_core{
 

@@ -5,7 +5,7 @@
 #include <string>
 #include <stdexcept>
 
-#include <graph_resolver/headers/graph_resolver.h>
+#include <graph_resolver/graph_resolver.h>
 
 using namespace std;
 
