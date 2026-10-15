@@ -12,9 +12,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_SCAN_FOR_MODULES ON)
-
 # Fetch content
 include(FetchContent)
 
@@ -30,19 +27,31 @@ add_library(graph_resolver)
 
 # Connection modules and headers
 target_sources(graph_resolver
-    PUBLIC
-        FILE_SET CXX_MODULES FILES
-            src/graph_resolver.cppm src/core.cppm
-        FILE_SET public_headers TYPE HEADERS FILES
-            src/macro.h
-    
     PRIVATE
         src/graph_resolver.cpp
+
+    PUBLIC
+        FILE_SET public_headers
+        TYPE HEADERS
+        BASE_DIRS
+            "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        FILES
+            include/graph_resolver/headers/graph_resolver.h
+            include/graph_resolver/headers/core.h
+
+            include/graph_resolver/utils/macro.h
+            include/graph_resolver/utils/my_span.h
+            include/graph_resolver/utils/hash_string.h
+)
+
+target_include_directories(graph_resolver
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
 
 # Linking externals
 target_link_libraries(graph_resolver
-    PRIVATE
+    PUBLIC
         nameof::nameof
 )
 

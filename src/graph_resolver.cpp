@@ -1,15 +1,12 @@
-module;
-
 #include <ranges>
 #include <functional>
 #include <queue>
 
-module graph_resolver;
-
-using namespace graph_core;
+#include "graph_resolver/headers/graph_resolver.h"
 
 namespace graph_resolver
 {
+    using namespace graph_core;
     // ---------------------- Types for graph ----------------------------
     using ModuleMapType = std::unordered_map<modid_t, ModuleSlotBase*>;
     using OrderType = std::vector<modid_t>;

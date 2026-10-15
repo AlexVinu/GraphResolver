@@ -1,9 +1,9 @@
 // examples/first/main.cpp
-import graph_resolver;
-import graph_core;
 
 #include <iostream>
 #include <string>
+
+#include <graph_resolver/headers/graph_resolver.h>
 
 using namespace std;
 

@@ -1,18 +1,10 @@
-module;
-
 #include <string_view>
-#include <type_traits>
 
-#include "macro.h"
+#include "core.h"
 
-export module graph_resolver;
+namespace graph_resolver{
+    using namespace graph_core;
 
-import graph_core;
-
-using namespace graph_core;
-
-export namespace graph_resolver
-{
     class GraphResolver;
     // ----------------- Functions signatures --------------------
     template<class T>

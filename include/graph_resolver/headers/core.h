@@ -1,23 +1,16 @@
-module;
+#pragma once
 
 #include <cstdint>
-#include <string_view>
+#include "graph_resolver/utils/my_span.h"
+#include "graph_resolver/utils/macro.h"
+#include "graph_resolver/utils/hash_string.h"
 
-#include "macro.h"
-
-export module graph_core;
-
-export namespace graph_core {
-    constexpr uint64_t hash_string(std::string_view str) {
-        uint64_t hash = 14695981039346656037ULL; // FNV_offset_basis (64-bit)
-        for (char c : str) {
-            hash ^= static_cast<uint64_t>(c);
-            hash *= 1099511628211ULL;            // FNV_prime (64-bit)
-        }
-        return hash;
-    }
+namespace graph_core{
 
     using modid_t = uint64_t;
+
+    using ModIdView = MySpan<modid_t>;
+    using StringView = MySpan<const char>;
 
     enum class GraphErrorCode : uint8_t
     {
@@ -26,20 +19,6 @@ export namespace graph_core {
         DuplicateModuleID
     };
 
-template<typename T>
-    struct MySpan
-    {
-        const T* data;
-        size_t count;
-
-        constexpr const T* begin() const noexcept { return data; }
-        constexpr const T* end() const noexcept { return data + count; }
-        constexpr size_t size() const noexcept { return count; }
-        constexpr bool empty() const noexcept { return count == 0; }
-    };
-
-    using ModIdView = MySpan<modid_t>;
-    using StringView = MySpan<const char>;
     struct GraphResult
     {
         GraphErrorCode code;

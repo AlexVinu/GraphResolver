@@ -1,13 +1,11 @@
 // examples/second/main.cpp
 // Example of catching errors
 
-
-import graph_resolver;
-import graph_core;
-
 #include <iostream>
 #include <string>
 #include <stdexcept>
+
+#include <graph_resolver/headers/graph_resolver.h>
 
 using namespace std;
 
