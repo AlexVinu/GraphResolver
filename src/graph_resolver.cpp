@@ -1,8 +1,10 @@
 #include <ranges>
 #include <functional>
 #include <queue>
+#include <string_view>
 
 #include "graph_resolver/graph_resolver.h"
+#include "graph_resolver/core.h"
 
 namespace graph_resolver
 {
@@ -123,7 +125,7 @@ namespace graph_resolver
         // 4. Final check
         if (exec_order.size() != module_slots.size())
         {
-            StringView trouble_mod_name;
+            std::string_view trouble_mod_name;
             for(const auto&[id, mod]: module_slots)
             {
                 auto it = std::ranges::find(exec_order, id);
@@ -133,7 +135,9 @@ namespace graph_resolver
                     break;
                 }
             }
-            return {GraphErrorCode::CycleDetected, trouble_mod_name};
+            GraphResult result;
+            result.code = GraphErrorCode::CycleDetected;
+            result.SetModName(trouble_mod_name);
         }
         return {GraphErrorCode::Success};
     }

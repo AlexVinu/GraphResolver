@@ -89,8 +89,8 @@ void ErrorCatcher(const GraphResult& res)
     {
         case GraphErrorCode::DuplicateModuleID: 
         {
-            cout << "ERROR: Found duplication.\n";
-            cout.write(res.mod_name.data, res.mod_name.size());
+            cout << "ERROR: Found duplication. ";
+            cout << res.mod_name;
             cout << " Realized interface twice\n";
             break;
         }

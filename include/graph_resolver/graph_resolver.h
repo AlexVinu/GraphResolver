@@ -1,3 +1,6 @@
+#pragma once
+
+#include "graph_resolver/core.h"
 #include "module_slot.h"
 
 namespace graph_resolver{
@@ -22,7 +25,10 @@ namespace graph_resolver{
             modid_t indx = hash_string(GET_TYPE_NAME(I));
             std::string_view view = GET_TYPE_NAME(T);
             if(HasModule(indx)){
-                return {GraphErrorCode::DuplicateModuleID, {view.data(), view.size()}}; 
+                GraphResult result;
+                result.code = GraphErrorCode::DuplicateModuleID;
+                result.SetModName(view); 
+                return result;
             }
 
             ModuleSlotBase* module_base = new ModuleSlot<I, T, DEPS, POSTDEPS>(

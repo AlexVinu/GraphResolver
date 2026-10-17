@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <type_traits>
+
 #include "utils/my_span.h"
 #include "utils/macro.h"
 #include "utils/hash_string.h"
@@ -10,7 +12,6 @@ namespace graph_core{
     using modid_t = uint64_t;
 
     using ModIdView = MySpan<modid_t>;
-    using StringView = MySpan<const char>;
 
     enum class GraphErrorCode : uint8_t
     {
@@ -22,11 +23,22 @@ namespace graph_core{
     struct GraphResult
     {
         GraphErrorCode code;
-        StringView mod_name;
+        char mod_name[256];
+
+        void SetModName(std::string_view sv)
+        {
+            constexpr size_t max_len = sizeof(mod_name) - 1;
+            size_t len = (sv.size() < max_len) ? sv.size() : max_len;
+
+            std::memcpy(mod_name, sv.data(), len);
+            mod_name[len] = '\0';
+        }
 
         bool IsOk() const {return code == GraphErrorCode::Success;}
         operator bool() const {return IsOk();}
     };
+
+    static_assert(std::is_standard_layout_v<GraphResult>, "graph_resolver error: GraphResult is not standard_layout!");
 
     template<class... T>
     struct TypeList

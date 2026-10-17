@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core.h"
+#include <string_view>
 
 namespace graph_resolver{
 
@@ -31,8 +32,8 @@ namespace graph_resolver{
         virtual ModIdView GetPostDeps() const = 0;
         virtual void* GetInterfacePtr() const = 0;
         virtual void DestroySelf() = 0;
-        virtual StringView GetInterfaceName() const = 0;
-        virtual StringView GetTypeName() const = 0;    
+        virtual std::string_view GetInterfaceName() const = 0;
+        virtual std::string_view GetTypeName() const = 0;    
     protected:
         virtual ~ModuleSlotBase() = default;
     };
@@ -68,15 +69,13 @@ namespace graph_resolver{
         ModIdView GetPostDeps() const override {return POSTDEPS::get();}
         void* GetInterfacePtr() const override {return static_cast<I*>(m_ModulePtr);}
         void DestroySelf() override {delete this;}
-        StringView GetInterfaceName() const override 
+        std::string_view GetInterfaceName() const override 
         {
-            std::string_view view = GET_TYPE_NAME(I);
-            return {view.data(), view.size()};
+            return GET_TYPE_NAME(I);
         }
-        StringView GetTypeName() const override 
+        std::string_view GetTypeName() const override 
         {
-            std::string_view view = GET_TYPE_NAME(T);
-            return {view.data(), view.size()};
+            return GET_TYPE_NAME(T);
         }
     private:    
         ~ModuleSlot() override
