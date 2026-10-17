@@ -2,24 +2,48 @@
 
 #include <cstdint>
 #include <type_traits>
+#include <algorithm>
 
-#include "utils/my_span.h"
 #include "utils/macro.h"
 #include "utils/hash_string.h"
 
 namespace graph_core{
 
     using modid_t = uint64_t;
-
-    using ModIdView = MySpan<modid_t>;
+    using modcount_t = uint16_t;
 
     enum class GraphErrorCode : uint8_t
     {
-        Success = 0,
-        CycleDetected,
-        DuplicateModuleID
+        Success             = 0,
+        CycleDetected       = 1,
+        DuplicateModuleID   = 2
     };
 
+    struct ModIdView
+    {
+        modid_t data[1024];
+        modcount_t count;
+
+        static constexpr ModIdView From(const modid_t* src, modcount_t n) noexcept
+        {
+            assert(n <= 1024 && "ModIdView: Too many elements! Exceeds maximum capacity of 1024.");
+
+            ModIdView view{};
+            view.count = n > 1024 ? 1024 : n;
+            
+            std::copy(src, src + view.count, view.data);
+            
+            return view;
+        }
+
+        constexpr const modid_t* begin() const noexcept { return data; }
+        constexpr const modid_t* end() const noexcept { return data + count; }
+        constexpr size_t size() const noexcept { return count; }
+        constexpr bool empty() const noexcept { return count == 0; }
+    };
+
+    static_assert(std::is_standard_layout_v<ModIdView>, "graph_resolver error: ModIdView is not standard_layout!");
+    static_assert(std::is_trivial_v<ModIdView>, "graph_resolver error: ModIdView is not trivial!");
     struct GraphResult
     {
         GraphErrorCode code;
@@ -39,16 +63,17 @@ namespace graph_core{
     };
 
     static_assert(std::is_standard_layout_v<GraphResult>, "graph_resolver error: GraphResult is not standard_layout!");
+    static_assert(std::is_trivial_v<GraphResult>, "graph_resolver error: GraphResult is not trivial!");
 
     template<class... T>
     struct TypeList
     {
-        static constexpr std::size_t size = sizeof...(T);
+        static constexpr modcount_t size = sizeof...(T);
         static inline constexpr modid_t arr[size > 0 ? size : 1] = {hash_string(GET_TYPE_NAME(T))...};
 
         static constexpr ModIdView get() noexcept
         {
-            return ModIdView{size > 0 ? arr : nullptr, size};
+            return ModIdView::From(arr, size);
         }
     };
 

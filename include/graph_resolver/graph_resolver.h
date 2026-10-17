@@ -49,12 +49,13 @@ namespace graph_resolver{
             return static_cast<I*>(GetModuleInt(indx));
         }
 
+        void AddModule(modid_t indx, ModuleSlotBase* module_base);
+        bool HasModule(modid_t indx);
+        
     private:
         struct Impl;
         Impl* m_Impl;
 
         void* GetModuleInt(modid_t indx);
-        void AddModule(modid_t indx, ModuleSlotBase* module_base);
-        bool HasModule(modid_t indx);
     };
 }
