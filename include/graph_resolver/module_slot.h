@@ -10,10 +10,10 @@ namespace graph_resolver{
 
     // ----------------- Functions signatures --------------------
     template<class T>
-    using ConstructFn = T*(*)(GraphResolver*);
+    using ConstructFn = T*(*)(IGraphResolver*);
 
     template<class T>
-    using PostConstructFn = void(*)(GraphResolver*, T*);
+    using PostConstructFn = void(*)(IGraphResolver*, T*);
 
     template<class T>
     using DestructFn = void(*)(T*);
@@ -35,11 +35,11 @@ namespace graph_resolver{
             DestructFn<T> fn_d = DefaultDestruct<T>)
             : m_Construct(fn1), m_PostConstruct(fn2), m_Destruct(fn_d), m_ModulePtr(nullptr){}
 
-        void Construct(GraphResolver* loader) override 
+        void Construct(IGraphResolver* loader) override 
         {
             if(m_Construct) m_ModulePtr = m_Construct(loader);
         }
-        void PostConstruct(GraphResolver* loader) override 
+        void PostConstruct(IGraphResolver* loader) override 
         {
             if(m_PostConstruct && m_ModulePtr) m_PostConstruct(loader, m_ModulePtr);
         }

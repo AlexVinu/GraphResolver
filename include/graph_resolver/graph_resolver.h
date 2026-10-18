@@ -2,15 +2,16 @@
 
 #include "graph_resolver/core.h"
 #include "module_slot.h"
+#include "i_graph_resolver.h"
 
 namespace graph_resolver{
     using namespace graph_core;
     
-    class GraphResolver
+    class GraphResolver : public IGraphResolver
     {
     public:
         GraphResolver();
-        ~GraphResolver();
+        ~GraphResolver() override;
 
         template<
             class I, class T,
@@ -37,10 +38,10 @@ namespace graph_resolver{
             return {GraphErrorCode::Success};
         }
 
-        GraphResult CompileGraph();
-        void ExecuteGraph();
-        void DestructInOrder();
-        void DestroyGraph();
+        GraphResult CompileGraph() override;
+        void ExecuteGraph() override;
+        void DestructInOrder() override;
+        void DestroyGraph() override;
 
         template<class I>
         I* GetModule()
@@ -49,13 +50,12 @@ namespace graph_resolver{
             return static_cast<I*>(GetModuleInt(indx));
         }
 
-        void AddModule(modid_t indx, ModuleSlotBase* module_base);
-        bool HasModule(modid_t indx);
-        
+        void AddModule(modid_t indx, ModuleSlotBase* module_base) override;
+        bool HasModule(modid_t indx) override;
+        void* GetModuleInt(modid_t indx) override;
+
     private:
         struct Impl;
         Impl* m_Impl;
-
-        void* GetModuleInt(modid_t indx);
     };
 }

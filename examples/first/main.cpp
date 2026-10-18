@@ -1,5 +1,6 @@
 // examples/first/main.cpp
 
+#include "graph_resolver/i_graph_resolver.h"
 #include <iostream>
 #include <string>
 
@@ -64,7 +65,7 @@ public:
 class Audio : public IAudio
 {
 public:
-    Audio(){std::cout << "Audio constructor!\n";}
+    Audio(){std::cout << "Audio constructorr!\n";}
     ~Audio(){std::cout << "Audio destructor!\n";}
     void Run() override {cout << "Audio run!\n";}
 };
@@ -75,27 +76,27 @@ int main() {
         using namespace graph_resolver;
         GraphResolver loader;
 
-        loader.AddModule<ILogger, Logger>([](GraphResolver* loader) {
+        loader.AddModule<ILogger, Logger>([](IGraphResolver* loader) {
             return new Logger("MyEngine");
         });
 
         loader.AddModule<IWindow, Window, TypeList<ILogger>, TypeList<IRender>>(
-            [](GraphResolver* loader) {
+            [](IGraphResolver* loader) {
                 return new Window();
             }, 
-            [](GraphResolver* loader, Window* ptr){
-                IRender* render_ptr = loader->GetModule<IRender>();
+            [](IGraphResolver* loader, Window* ptr){
+                IRender* render_ptr = GetModule<IRender>(loader);
                 render_ptr->FuncForWindow();
                 ptr->PostConstruct();
             });
 
         loader.AddModule<IRender, Render, TypeList<ILogger, IWindow>>(
-            [](GraphResolver* loader) {
-            IWindow* window_ptr = loader->GetModule<IWindow>();
+            [](IGraphResolver* loader) {
+            IWindow* window_ptr = GetModule<IWindow>(loader);
             return new Render(window_ptr);
         });
 
-        loader.AddModule<IAudio, Audio, TypeList<ILogger>>([](GraphResolver* loader) {
+        loader.AddModule<IAudio, Audio, TypeList<ILogger>>([](IGraphResolver* loader) {
             return new Audio();
         });
 

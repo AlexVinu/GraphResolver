@@ -37,10 +37,12 @@ target_sources(graph_resolver
             "${CMAKE_CURRENT_SOURCE_DIR}/include"
         FILES
             include/graph_resolver/graph_resolver.h
+            include/graph_resolver/i_graph_resolver.h
             include/graph_resolver/core.h
+            include/graph_resolver/module_slot_base.h
+            include/graph_resolver/module_slot.h
 
             include/graph_resolver/utils/macro.h
-            include/graph_resolver/utils/my_span.h
             include/graph_resolver/utils/hash_string.h
 )
 
@@ -59,3 +61,4 @@ target_link_libraries(graph_resolver
 
 add_subdirectory(examples/first)
 add_subdirectory(examples/second)
+add_subdirectory(examples/third)

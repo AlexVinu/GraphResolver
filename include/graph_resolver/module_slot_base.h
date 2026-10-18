@@ -5,12 +5,11 @@
 namespace graph_resolver{
     using namespace graph_core;
 
-    class GraphResolver;
-
+    class IGraphResolver;
     struct ModuleSlotBase
     {
-        virtual void Construct(GraphResolver*) = 0;
-        virtual void PostConstruct(GraphResolver*) = 0;
+        virtual void Construct(IGraphResolver*) = 0;
+        virtual void PostConstruct(IGraphResolver*) = 0;
         virtual void Destruct() = 0;
         virtual ModIdView GetDeps() const = 0;
         virtual ModIdView GetPostDeps() const = 0;

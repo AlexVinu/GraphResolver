@@ -1,6 +1,7 @@
 // examples/second/main.cpp
 // Example of catching errors
 
+#include "graph_resolver/i_graph_resolver.h"
 #include <iostream>
 #include <string>
 #include <stdexcept>
@@ -103,36 +104,36 @@ int main() {
     try {
         GraphResolver loader;
 
-        loader.AddModule<ILogger, Logger>([](GraphResolver* loader) {
+        loader.AddModule<ILogger, Logger>([](IGraphResolver* loader) {
             return new Logger("MyEngine");
         });
 
         loader.AddModule<IWindow, Window, TypeList<ILogger>, TypeList<IRender>>(
-            [](GraphResolver* loader) {
+            [](IGraphResolver* loader) {
                 return new Window();
             }, 
-            [](GraphResolver* loader, Window* ptr){
-                IRender* render_ptr = loader->GetModule<IRender>();
+            [](IGraphResolver* loader, Window* ptr){
+                IRender* render_ptr = GetModule<IRender>(loader);
                 render_ptr->FuncForWindow();
                 ptr->PostConstruct();
             });
 
         loader.AddModule<IRender, Render, TypeList<ILogger, IWindow>>(
-            [](GraphResolver* loader) {
-            IWindow* window_ptr = loader->GetModule<IWindow>();
+            [](IGraphResolver* loader) {
+            IWindow* window_ptr = GetModule<IWindow>(loader);
             return new Render(window_ptr);
         });
 
         if(const auto res = loader.AddModule<IRender, AnotherRender, TypeList<ILogger, IWindow>>(
-            [](GraphResolver* loader) {
-            IWindow* window_ptr = loader->GetModule<IWindow>();
+            [](IGraphResolver* loader) {
+            IWindow* window_ptr = GetModule<IWindow>(loader);
             return new AnotherRender(window_ptr);
         }); !res)
         {
             ErrorCatcher(res);
         }
 
-        loader.AddModule<IAudio, Audio, TypeList<ILogger>>([](GraphResolver* loader) {
+        loader.AddModule<IAudio, Audio, TypeList<ILogger>>([](IGraphResolver* loader) {
             return new Audio();
         });
 
