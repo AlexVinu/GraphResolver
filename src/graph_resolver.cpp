@@ -2,6 +2,8 @@
 #include <functional>
 #include <queue>
 #include <string_view>
+#include <unordered_map>
+#include <vector>
 
 #include "graph_resolver/graph_resolver.h"
 #include "graph_resolver/core.h"
@@ -23,11 +25,15 @@ namespace graph_resolver
         ModuleMapType moduleSlots;
         OrderType initOrder;
         OrderType postInitOrder;
+        bool isCompiled = false;
+        bool isExecuted = false;
         void Clear()
         {
             moduleSlots.clear();
             initOrder.clear();
             postInitOrder.clear();
+            isCompiled = false;
+            isExecuted = false;
         }
     };
 
@@ -51,6 +57,8 @@ namespace graph_resolver
 
     GraphResult GraphResolver::CompileGraph()
     {
+        m_Impl->isCompiled = false;
+
         const auto init_success = MakeGraph(m_Impl->moduleSlots, m_Impl->initOrder, 
             [](const ModuleSlotBase* mod_slot){return mod_slot->GetDeps();});
         if(!init_success) return init_success;
@@ -59,11 +67,20 @@ namespace graph_resolver
             [](const ModuleSlotBase* mod_slot){return mod_slot->GetPostDeps();});
         if(!post_init_success) return post_init_success;
         
+        m_Impl->isCompiled = true;
+
         return {GraphErrorCode::Success};
     }
 
-    void GraphResolver::ExecuteGraph()
+    GraphResult GraphResolver::ExecuteGraph()
     {
+        m_Impl->isExecuted = false;
+        
+        if(!m_Impl->isCompiled) 
+        {
+            return {GraphErrorCode::GraphNotCompiled};
+        }
+
         for(const auto idx: m_Impl->initOrder)
         {
             const auto& mod = m_Impl->moduleSlots[idx];
@@ -74,14 +91,25 @@ namespace graph_resolver
             const auto& mod = m_Impl->moduleSlots[idx];
             mod->PostConstruct(this);
         }
+
+        m_Impl->isExecuted = true;
+        return {GraphErrorCode::Success};
     }
 
     void GraphResolver::DestroyGraph()
     {
+        // First - destroy compiled graph
         for (const auto idx : std::views::reverse(m_Impl->initOrder))
         {
             m_Impl->moduleSlots[idx]->DestroySelf();
+            m_Impl->moduleSlots.erase(idx);
         }
+        // Second - if graph wasnt fully compiled
+        for(const auto&[idx, mod]: m_Impl->moduleSlots)
+        {
+            mod->DestroySelf();
+        }
+
         m_Impl->Clear();
     }
 
@@ -101,6 +129,15 @@ namespace graph_resolver
             in_degree[type] = 0;
             for(const auto dep: deps)
             {
+                if(!module_slots.contains(dep)) 
+                {
+                    GraphResult result;
+                    result.code = GraphErrorCode::MissingDependancy;
+                    auto name = module->GetTypeName();
+                    result.SetModName(name);
+                    return result;
+                }
+
                 in_degree[type]+=1;
                 dependents[dep].push_back(type);
             }
@@ -138,6 +175,7 @@ namespace graph_resolver
             GraphResult result;
             result.code = GraphErrorCode::CycleDetected;
             result.SetModName(trouble_mod_name);
+            return result;
         }
         return {GraphErrorCode::Success};
     }

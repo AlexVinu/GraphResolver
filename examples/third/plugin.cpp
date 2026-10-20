@@ -1,7 +1,5 @@
 #include "graph_resolver/core.h"
 #include "graph_resolver/i_graph_resolver.h"
-#include "graph_resolver/utils/hash_string.h"
-#include "graph_resolver/utils/macro.h"
 #include "header.h"
 
 #include <iostream>

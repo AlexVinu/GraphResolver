@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <type_traits>
 #include <algorithm>
+#include <cstring>
+#include <cassert>
 
 #include "utils/macro.h"
 #include "utils/hash_string.h"
@@ -16,7 +18,9 @@ namespace graph_core{
     {
         Success             = 0,
         CycleDetected       = 1,
-        DuplicateModuleID   = 2
+        DuplicateModuleID   = 2,
+        MissingDependancy   = 3,
+        GraphNotCompiled    = 4
     };
 
     struct ModIdView

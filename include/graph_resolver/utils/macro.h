@@ -2,4 +2,4 @@
 
 #include "nameof.hpp"
 
-#define GET_TYPE_NAME(...) NAMEOF_SHORT_TYPE(__VA_ARGS__)
+#define GET_TYPE_NAME(...) NAMEOF_TYPE(__VA_ARGS__)

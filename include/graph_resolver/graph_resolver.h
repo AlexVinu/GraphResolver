@@ -11,6 +11,7 @@ namespace graph_resolver{
     {
     public:
         GraphResolver();
+        GraphResolver(const GraphResolver&) = delete;
         ~GraphResolver() override;
 
         template<
@@ -39,7 +40,7 @@ namespace graph_resolver{
         }
 
         GraphResult CompileGraph() override;
-        void ExecuteGraph() override;
+        GraphResult ExecuteGraph() override;
         void DestructInOrder() override;
         void DestroyGraph() override;
 

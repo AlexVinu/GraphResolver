@@ -5,7 +5,7 @@
 namespace graph_resolver{
     using namespace graph_core;
 
-    class IGraphResolver;
+    struct IGraphResolver;
     struct ModuleSlotBase
     {
         virtual void Construct(IGraphResolver*) = 0;

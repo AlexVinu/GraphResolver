@@ -33,7 +33,7 @@ namespace graph_resolver{
             ConstructFn<T> fn1,
             PostConstructFn<T> fn2 = nullptr,
             DestructFn<T> fn_d = DefaultDestruct<T>)
-            : m_Construct(fn1), m_PostConstruct(fn2), m_Destruct(fn_d), m_ModulePtr(nullptr){}
+            : m_ModulePtr(nullptr), m_Construct(fn1), m_PostConstruct(fn2), m_Destruct(fn_d){}
 
         void Construct(IGraphResolver* loader) override 
         {

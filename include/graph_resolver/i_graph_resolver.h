@@ -10,7 +10,7 @@ namespace graph_resolver{
     {
         virtual ~IGraphResolver()                   = default;
         virtual GraphResult CompileGraph()          = 0;
-        virtual void ExecuteGraph()                 = 0;
+        virtual GraphResult ExecuteGraph()          = 0;
         virtual void DestructInOrder()              = 0;
         virtual void DestroyGraph()                 = 0;
         virtual void AddModule(modid_t indx, ModuleSlotBase* module_base) = 0;
