@@ -2,27 +2,28 @@
 
 #include "core.h"
 #include "module_slot.h"
+#include <type_traits>
 
 namespace graph_resolver{
     using namespace graph_core;
 
     struct IGraphResolver
     {
-        virtual ~IGraphResolver()                   = default;
-        virtual GraphResult CompileGraph()          = 0;
-        virtual GraphResult ExecuteGraph()          = 0;
-        virtual void DestructInOrder()              = 0;
-        virtual void DestroyGraph()                 = 0;
-        virtual void AddModule(modid_t indx, ModuleSlotBase* module_base) = 0;
-        virtual bool HasModule(modid_t indx)        = 0;
-        virtual void* GetModuleInt(modid_t indx)    = 0;
+        virtual ~IGraphResolver()                                           = default;
+        virtual GraphResult ExecuteGraph()                                  = 0;
+        virtual GraphResult CompileGraph()                                  = 0;
+        virtual void DestructInOrder()                                      = 0;
+        virtual void DestroyGraph()                                         = 0;
+        virtual void AddModule(modid_t indx, ModuleSlotBase* module_base)   = 0;
+        virtual bool HasModule(modid_t indx)                                = 0;
+        virtual void* GetModuleInt(modid_t indx)                            = 0;
     };
 
     template<
         class I, class T,
         typename DEPS = TypeList<>,
         typename POSTDEPS = TypeList<>
-        >
+        > requires std::is_base_of_v<I, T>
     GraphResult AddModule(
         IGraphResolver* graph_resolver,
         ConstructFn<T> construct,
@@ -49,5 +50,12 @@ namespace graph_resolver{
     {
         modid_t indx(hash_string(GET_TYPE_NAME(I)));
         return static_cast<I*>(graph_resolver->GetModuleInt(indx));
+    }
+
+    template<class I>
+    bool HasModule(IGraphResolver* graph_resolver)
+    {
+        modid_t indx(hash_string(GET_TYPE_NAME(I)));
+        return graph_resolver->HasModule(indx);
     }
 }

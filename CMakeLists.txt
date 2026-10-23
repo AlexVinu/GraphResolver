@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.28)
 
 project(graph_resolver LANGUAGES CXX)
 
+enable_testing()
+
 # Cpp standart
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
@@ -12,9 +14,12 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+option(BUILD_TESTING "Build unit tests" ON)
+
 # Fetch content
 include(FetchContent)
 
+# Fetch nameof
 FetchContent_Declare(
     nameof
     GIT_REPOSITORY https://github.com/Neargye/nameof.git
@@ -62,3 +67,7 @@ target_link_libraries(graph_resolver
 add_subdirectory(examples/first)
 add_subdirectory(examples/second)
 add_subdirectory(examples/third)
+
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()

@@ -18,7 +18,7 @@ namespace graph_resolver{
             class I, class T,
             typename DEPS = TypeList<>,
             typename POSTDEPS = TypeList<>
-            >
+            > requires std::is_base_of_v<I, T>
         GraphResult AddModule(
             ConstructFn<T> construct,
             PostConstructFn<T> post_construct = nullptr,
@@ -39,17 +39,24 @@ namespace graph_resolver{
             return {GraphErrorCode::Success};
         }
 
-        GraphResult CompileGraph() override;
-        GraphResult ExecuteGraph() override;
-        void DestructInOrder() override;
-        void DestroyGraph() override;
-
         template<class I>
         I* GetModule()
         {
             modid_t indx(hash_string(GET_TYPE_NAME(I)));
             return static_cast<I*>(GetModuleInt(indx));
         }
+
+        template<class I>
+        bool HasModule()
+        {
+            modid_t indx = hash_string(GET_TYPE_NAME(I));
+            return HasModule(indx);
+        }
+
+        GraphResult CompileGraph() override;
+        GraphResult ExecuteGraph() override;
+        void DestructInOrder() override;
+        void DestroyGraph() override;
 
         void AddModule(modid_t indx, ModuleSlotBase* module_base) override;
         bool HasModule(modid_t indx) override;
