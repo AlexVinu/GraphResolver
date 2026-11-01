@@ -1,20 +1,17 @@
 cmake_minimum_required(VERSION 3.28)
 
-project(graph_resolver LANGUAGES CXX)
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    project(graph_resolver LANGUAGES CXX)
+endif()
 
-enable_testing()
-
-# Cpp standart
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-# Output directories
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
-option(BUILD_TESTING "Build unit tests" ON)
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    set(GRAPH_RESOLVER_STANDALONE_DEFAULT ON)
+else()
+    set(GRAPH_RESOLVER_STANDALONE_DEFAULT OFF)
+endif()
+option(GRAPH_RESOLVER_BUILD_EXAMPLES "Build graph_resolver examples" ${GRAPH_RESOLVER_STANDALONE_DEFAULT})
+option(GRAPH_RESOLVER_BUILD_TESTS "Build graph_resolver tests" ${GRAPH_RESOLVER_STANDALONE_DEFAULT})
+unset(GRAPH_RESOLVER_STANDALONE_DEFAULT)
 
 # Fetch content
 include(FetchContent)
@@ -29,6 +26,8 @@ FetchContent_MakeAvailable(nameof)
 
 # Target
 add_library(graph_resolver)
+add_library(graph_resolver::graph_resolver ALIAS graph_resolver)
+target_compile_features(graph_resolver PUBLIC cxx_std_20)
 
 # Connection modules and headers
 target_sources(graph_resolver
@@ -64,10 +63,13 @@ target_link_libraries(graph_resolver
         nameof::nameof
 )
 
-add_subdirectory(examples/first)
-add_subdirectory(examples/second)
-add_subdirectory(examples/third)
+if(GRAPH_RESOLVER_BUILD_EXAMPLES)
+    add_subdirectory(examples/first)
+    add_subdirectory(examples/second)
+    add_subdirectory(examples/third)
+endif()
 
-if(BUILD_TESTING)
+if(GRAPH_RESOLVER_BUILD_TESTS)
+    enable_testing()
     add_subdirectory(tests)
 endif()
