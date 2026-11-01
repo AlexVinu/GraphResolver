@@ -20,7 +20,8 @@ namespace graph_core{
         CycleDetected       = 1,
         DuplicateModuleID   = 2,
         MissingDependancy   = 3,
-        GraphNotCompiled    = 4
+        GraphNotCompiled    = 4,
+        GraphAlreadyExecuted= 5,
     };
 
     struct ModIdView

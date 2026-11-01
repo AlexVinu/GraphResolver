@@ -64,6 +64,6 @@ namespace graph_resolver{
 
     private:
         struct Impl;
-        Impl* m_Impl;
+        Impl* p_Impl;
     };
 }

@@ -40,78 +40,82 @@ namespace graph_resolver
 
     GraphResolver::GraphResolver()
     {
-        m_Impl = new Impl;
+        p_Impl = new Impl;
     }
     GraphResolver::~GraphResolver()
     {
         DestroyGraph();
-        delete m_Impl;
+        delete p_Impl;
     }
 
     void GraphResolver::DestructInOrder()
     {
-        for (const auto idx : std::views::reverse(m_Impl->initOrder))
+        for (const auto idx : std::views::reverse(p_Impl->initOrder))
         {
-            m_Impl->moduleSlots[idx]->Destruct();
+            p_Impl->moduleSlots[idx]->Destruct();
         }
     }
 
     GraphResult GraphResolver::CompileGraph()
     {
-        m_Impl->isCompiled = false;
+        p_Impl->isCompiled = false;
 
-        const auto init_success = MakeGraph(m_Impl->moduleSlots, m_Impl->initOrder, 
+        const auto init_success = MakeGraph(p_Impl->moduleSlots, p_Impl->initOrder, 
             [](const ModuleSlotBase* mod_slot){return mod_slot->GetDeps();});
         if(!init_success) return init_success;
         
-        const auto post_init_success = MakeGraph(m_Impl->moduleSlots, m_Impl->postInitOrder, 
+        const auto post_init_success = MakeGraph(p_Impl->moduleSlots, p_Impl->postInitOrder, 
             [](const ModuleSlotBase* mod_slot){return mod_slot->GetPostDeps();});
         if(!post_init_success) return post_init_success;
         
-        m_Impl->isCompiled = true;
+        p_Impl->isCompiled = true;
+        p_Impl->isExecuted = false;
 
         return {GraphErrorCode::Success};
     }
 
     GraphResult GraphResolver::ExecuteGraph()
     {
-        m_Impl->isExecuted = false;
+        if(p_Impl->isExecuted) 
+        {
+            return {GraphErrorCode::GraphAlreadyExecuted};
+        }
         
-        if(!m_Impl->isCompiled) 
+        if(!p_Impl->isCompiled) 
         {
             return {GraphErrorCode::GraphNotCompiled};
         }
 
-        for(const auto idx: m_Impl->initOrder)
+        for(const auto idx: p_Impl->initOrder)
         {
-            const auto& mod = m_Impl->moduleSlots[idx];
+            const auto& mod = p_Impl->moduleSlots[idx];
             mod->Construct(this);
         }
-        for(const auto idx: m_Impl->postInitOrder)
+        for(const auto idx: p_Impl->postInitOrder)
         {
-            const auto& mod = m_Impl->moduleSlots[idx];
+            const auto& mod = p_Impl->moduleSlots[idx];
             mod->PostConstruct(this);
         }
 
-        m_Impl->isExecuted = true;
+        p_Impl->isExecuted = true;
         return {GraphErrorCode::Success};
     }
 
     void GraphResolver::DestroyGraph()
     {
         // First - destroy compiled graph
-        for (const auto idx : std::views::reverse(m_Impl->initOrder))
+        for (const auto idx : std::views::reverse(p_Impl->initOrder))
         {
-            m_Impl->moduleSlots[idx]->DestroySelf();
-            m_Impl->moduleSlots.erase(idx);
+            p_Impl->moduleSlots[idx]->DestroySelf();
+            p_Impl->moduleSlots.erase(idx);
         }
         // Second - if graph wasnt fully compiled
-        for(const auto&[idx, mod]: m_Impl->moduleSlots)
+        for(const auto&[idx, mod]: p_Impl->moduleSlots)
         {
             mod->DestroySelf();
         }
 
-        m_Impl->Clear();
+        p_Impl->Clear();
     }
 
     GraphResult MakeGraph(const ModuleMapType& module_slots,
@@ -184,8 +188,8 @@ namespace graph_resolver
     // -------------- Private methods -----------------
     void* GraphResolver::GetModuleInt(modid_t indx)
     {
-        auto it = m_Impl->moduleSlots.find(indx);
-        if (it != m_Impl->moduleSlots.end())
+        auto it = p_Impl->moduleSlots.find(indx);
+        if (it != p_Impl->moduleSlots.end())
         {
             return it->second->GetInterfacePtr();
         }
@@ -194,11 +198,11 @@ namespace graph_resolver
 
     void GraphResolver::AddModule(modid_t indx, ModuleSlotBase *module_base)
     {
-        m_Impl->moduleSlots[indx] = module_base;
+        p_Impl->moduleSlots[indx] = module_base;
     }
 
     bool GraphResolver::HasModule(modid_t indx)
     {
-        return m_Impl->moduleSlots.contains(indx);
+        return p_Impl->moduleSlots.contains(indx);
     }
 }
