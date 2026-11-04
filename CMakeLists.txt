@@ -13,26 +13,24 @@ option(GRAPH_RESOLVER_BUILD_EXAMPLES "Build graph_resolver examples" ${GRAPH_RES
 option(GRAPH_RESOLVER_BUILD_TESTS "Build graph_resolver tests" ${GRAPH_RESOLVER_STANDALONE_DEFAULT})
 unset(GRAPH_RESOLVER_STANDALONE_DEFAULT)
 
-# Fetch content
-include(FetchContent)
-
-# Fetch nameof
-FetchContent_Declare(
-    nameof
-    GIT_REPOSITORY https://github.com/Neargye/nameof.git
-    GIT_TAG        v0.10.4 
-)
-FetchContent_MakeAvailable(nameof)
-
 # Target
 add_library(graph_resolver)
 add_library(graph_resolver::graph_resolver ALIAS graph_resolver)
+add_library(GraphResolverPluginAPI INTERFACE)
+
+target_include_directories(GraphResolverPluginAPI INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
 target_compile_features(graph_resolver PUBLIC cxx_std_20)
 
 # Connection modules and headers
 target_sources(graph_resolver
     PRIVATE
         src/graph_resolver.cpp
+        src/module_slot.cpp
+        src/core.cpp
+        src/module_slot_desc.cpp
 
     PUBLIC
         FILE_SET public_headers
@@ -40,12 +38,14 @@ target_sources(graph_resolver
         BASE_DIRS
             "${CMAKE_CURRENT_SOURCE_DIR}/include"
         FILES
-            include/graph_resolver/graph_resolver.h
-            include/graph_resolver/i_graph_resolver.h
-            include/graph_resolver/core.h
-            include/graph_resolver/module_slot_base.h
-            include/graph_resolver/module_slot.h
+            include/graph_resolver/internal/graph_resolver.h
+            include/graph_resolver/internal/module_slot.h
 
+            include/graph_resolver/api/graph_resolver_api.h
+            include/graph_resolver/api/core.h
+            include/graph_resolver/api/module_slot_desc.h
+
+            include/graph_resolver/utils/nameof.hpp
             include/graph_resolver/utils/macro.h
             include/graph_resolver/utils/hash_string.h
 )
@@ -55,12 +55,6 @@ target_include_directories(graph_resolver
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
     PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/include/utils"
-)
-
-# Linking externals
-target_link_libraries(graph_resolver
-    PUBLIC
-        nameof::nameof
 )
 
 if(GRAPH_RESOLVER_BUILD_EXAMPLES)

@@ -29,3 +29,9 @@
 		#define PLUGIN_API
 	#endif
 #endif
+
+#if defined(_WIN32)
+    #define CALL __cdecl
+#else
+    #define CALL
+#endif

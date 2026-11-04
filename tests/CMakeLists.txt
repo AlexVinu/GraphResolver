@@ -14,21 +14,21 @@ FetchContent_MakeAvailable(googletest)
 add_executable(test_graph_resolver
         test_graph_resolver.cpp)
 
-add_executable(test_i_graph_resolver
-        test_i_graph_resolver.cpp)
+add_executable(test_graph_resolver_api
+        test_graph_resolver_api.cpp)
 
 target_link_libraries(test_graph_resolver
     PRIVATE
     GTest::gtest_main
-    graph_resolver       
+    graph_resolver
 )
 
-target_link_libraries(test_i_graph_resolver
+target_link_libraries(test_graph_resolver_api
     PRIVATE
     GTest::gtest_main
-    graph_resolver       
+    graph_resolver
 )
 
 include(GoogleTest)
 gtest_discover_tests(test_graph_resolver)
-gtest_discover_tests(test_i_graph_resolver)
+gtest_discover_tests(test_graph_resolver_api)

@@ -1,35 +1,41 @@
 #pragma once
 
 #include "core.h"
+#include <graph_resolver/api/graph_resolver_api.h>
 
-#include <graph_resolver/i_graph_resolver.h>
+typedef struct window window;
+typedef struct render render;
+typedef struct audio audio;
 
-struct IRender;
+typedef struct render_api render_api;
 
-struct IWindow
+typedef struct window_api
 {
-    virtual ~IWindow() = default;
-    virtual void PostConstruct(IRender*) = 0;
-    virtual void Run() = 0;
-};
+    uint32_t struct_size;
 
-struct IRender
+    void (CALL *post_construct)(window* self, const render_api* render_api_ptr, render* render_ptr);
+    void (CALL *run)(window* self);
+} window_api;
+
+typedef struct render_api
 {
-    virtual ~IRender() = default;
-    virtual void FuncForWindow() = 0;
-    virtual void Run() = 0;
-};
+    uint32_t struct_size;
 
-struct IAudio
+    void (CALL *func_for_window)(render* self);
+    void (CALL *run)(render* self);
+} render_api;
+
+typedef struct audio_api
 {
-    virtual ~IAudio() = default;
-    virtual void Run() = 0;
-};
+    uint32_t struct_size;
 
-using GetIGraphResolverFn = graph_resolver::IGraphResolver* (*)();
+    void (CALL *run)(audio* self);
+} audio_api;
 
 extern "C"
 {
-    graph_resolver::IGraphResolver* GetIGraphResolver();
-    PLUGIN_API void RegisterPlugins(GetIGraphResolverFn);
+    PLUGIN_API void RegisterPlugins(const gr_GraphResolverApi*, gr_GraphResolver*);
+    PLUGIN_API const window_api* CALL GetWindowApi();
+    PLUGIN_API const render_api* CALL GetRenderApi();
+    PLUGIN_API const audio_api* CALL GetAudioApi();
 }

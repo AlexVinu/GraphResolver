@@ -1,122 +1,212 @@
-#include "graph_resolver/core.h"
+#include "graph_resolver/internal/graph_resolver.h"
+
 #include <gtest/gtest.h>
-#include <graph_resolver/graph_resolver.h>
 
-using namespace graph_resolver;
-using namespace graph_core;
+#include <string>
+#include <vector>
 
-// Interfaces of modules
-struct IFirstModule
-{
-    virtual ~IFirstModule() = default;
-};
-struct ISecondModule
-{
-    virtual ~ISecondModule() = default;
-};
-
-// Realizations of modules
-struct FirstModOfIFirst: public IFirstModule
+namespace
 {
 
-};
-struct SecondModOfIFirst: public IFirstModule
-{
+struct RootModule {};
+struct DependentModule {};
+struct MissingModule {};
+struct CycleModuleA {};
+struct CycleModuleB {};
+struct FirstModule {};
+struct SecondModule {};
+struct ThirdModule {};
 
-};
-struct FirstModOfISecond: public ISecondModule
-{
+std::vector<std::string> events;
 
-};
-
-// Fixtures
-struct GraphResolverFixture : public testing::Test
+struct GraphResolverFixture : testing::Test
 {
-    GraphResolver graph_resolver;
+    gr_GraphResolver graph;
+
+    void SetUp() override
+    {
+        events.clear();
+    }
 };
 
-TEST_F(GraphResolverFixture, AddModule_SuccessfullyAddsNewModule)
+TEST_F(GraphResolverFixture, AddsCompilesAndExecutesModule)
 {
-    auto result = graph_resolver.AddModule<IFirstModule, FirstModOfIFirst>(
-        [](IGraphResolver*){return new FirstModOfIFirst;});
-    ASSERT_TRUE(result);
+    const auto add_result = graph.AddModule<RootModule>(
+        [](const gr_GraphResolverApi*, gr_GraphResolver*)
+        {
+            return static_cast<void*>(new RootModule);
+        });
 
-    EXPECT_TRUE(graph_resolver.HasModule<IFirstModule>());
-    ASSERT_TRUE(graph_resolver.CompileGraph());
-    ASSERT_TRUE(graph_resolver.ExecuteGraph());
+    ASSERT_TRUE(add_result);
+    EXPECT_TRUE(graph.HasModule<RootModule>());
+    EXPECT_EQ(graph.GetModule<RootModule>(), nullptr);
 
-    EXPECT_NE(graph_resolver.GetModule<IFirstModule>(), nullptr);
+    ASSERT_TRUE(graph.CompileGraph());
+    ASSERT_TRUE(graph.ExecuteGraph());
+    EXPECT_NE(graph.GetModule<RootModule>(), nullptr);
 }
 
-TEST_F(GraphResolverFixture, AddModule_MultipleModulesWithDifferentInterfaces)
+TEST_F(GraphResolverFixture, RejectsDuplicateModuleId)
 {
-    graph_resolver.AddModule<IFirstModule, FirstModOfIFirst>(
-        [](IGraphResolver*){return new FirstModOfIFirst;});
+    ASSERT_TRUE(graph.AddModule<RootModule>(
+        [](const gr_GraphResolverApi*, gr_GraphResolver*)
+        {
+            return static_cast<void*>(new RootModule);
+        }));
 
-    auto result = graph_resolver.AddModule<ISecondModule, FirstModOfISecond>(
-        [](IGraphResolver*){return new FirstModOfISecond;});
-    
-    ASSERT_TRUE(result);
-    EXPECT_TRUE(graph_resolver.HasModule<ISecondModule>());
-    EXPECT_TRUE(graph_resolver.HasModule<IFirstModule>());
-    ASSERT_TRUE(graph_resolver.CompileGraph());
-    ASSERT_TRUE(graph_resolver.ExecuteGraph());
+    const auto result = graph.AddModule<RootModule>(
+        [](const gr_GraphResolverApi*, gr_GraphResolver*)
+        {
+            return static_cast<void*>(new RootModule);
+        });
 
-    EXPECT_NE(graph_resolver.GetModule<IFirstModule>(), nullptr);
-    EXPECT_NE(graph_resolver.GetModule<ISecondModule>(), nullptr);
+    EXPECT_EQ(result.code, gr_GraphErrorCode::DuplicateModuleID);
+    EXPECT_TRUE(graph.HasModule<RootModule>());
 }
 
-TEST_F(GraphResolverFixture, AddModule_DuplicateInterface)
+TEST_F(GraphResolverFixture, CompileRejectsMissingDependency)
 {
-    graph_resolver.AddModule<IFirstModule, FirstModOfIFirst>(
-        [](IGraphResolver*){return new FirstModOfIFirst;});
+    ASSERT_TRUE((graph.AddModule<DependentModule, gr_TypeList<MissingModule>>(
+        [](const gr_GraphResolverApi*, gr_GraphResolver*)
+        {
+            return static_cast<void*>(new DependentModule);
+        })));
 
-    auto res_ = graph_resolver.AddModule<IFirstModule, SecondModOfIFirst>(
-        [](IGraphResolver*){return new SecondModOfIFirst;});
-    
-    EXPECT_EQ(res_.code, GraphErrorCode::DuplicateModuleID);
-    EXPECT_TRUE(graph_resolver.HasModule<IFirstModule>());
-    ASSERT_TRUE(graph_resolver.CompileGraph());
-    ASSERT_TRUE(graph_resolver.ExecuteGraph());
-
-    EXPECT_NE(graph_resolver.GetModule<IFirstModule>(), nullptr);
+    const auto result = graph.CompileGraph();
+    EXPECT_EQ(result.code, gr_GraphErrorCode::MissingDependancy);
 }
 
-TEST_F(GraphResolverFixture, Compile_MissDependancy)
+TEST_F(GraphResolverFixture, CompileRejectsDependencyCycle)
 {
-    graph_resolver.AddModule<IFirstModule, FirstModOfIFirst, TypeList<ISecondModule>>(
-        [](IGraphResolver*){return new FirstModOfIFirst;});
+    ASSERT_TRUE((graph.AddModule<CycleModuleA, gr_TypeList<CycleModuleB>>(
+        [](const gr_GraphResolverApi*, gr_GraphResolver*)
+        {
+            return static_cast<void*>(new CycleModuleA);
+        })));
+    ASSERT_TRUE((graph.AddModule<CycleModuleB, gr_TypeList<CycleModuleA>>(
+        [](const gr_GraphResolverApi*, gr_GraphResolver*)
+        {
+            return static_cast<void*>(new CycleModuleB);
+        })));
 
-    ASSERT_EQ(graph_resolver.CompileGraph().code, GraphErrorCode::MissingDependancy);
+    EXPECT_EQ(graph.CompileGraph().code, gr_GraphErrorCode::CycleDetected);
 }
 
-TEST_F(GraphResolverFixture, Compile_DependancyCycle)
+TEST_F(GraphResolverFixture, ConstructionAndPostConstructionRespectDependencies)
 {
-    graph_resolver.AddModule<IFirstModule, FirstModOfIFirst, TypeList<ISecondModule>>(
-        [](IGraphResolver*){return new FirstModOfIFirst;});
-    graph_resolver.AddModule<ISecondModule, FirstModOfISecond, TypeList<IFirstModule>>(
-        [](IGraphResolver*){return new FirstModOfISecond;});
-    
-    ASSERT_EQ(graph_resolver.CompileGraph().code, GraphErrorCode::CycleDetected);
+    ASSERT_TRUE((graph.AddModule<RootModule>(
+        [](const gr_GraphResolverApi*, gr_GraphResolver*)
+        {
+            events.emplace_back("construct-root");
+            return static_cast<void*>(new RootModule);
+        },
+        [](const gr_GraphResolverApi*, gr_GraphResolver*, void*)
+        {
+            events.emplace_back("post-root");
+        })));
+
+    ASSERT_TRUE((graph.AddModule<DependentModule, gr_TypeList<RootModule>,
+        gr_TypeList<RootModule>>(
+        [](const gr_GraphResolverApi*, gr_GraphResolver*)
+        {
+            events.emplace_back("construct-dependent");
+            return static_cast<void*>(new DependentModule);
+        },
+        [](const gr_GraphResolverApi*, gr_GraphResolver*, void*)
+        {
+            events.emplace_back("post-dependent");
+        })));
+
+    ASSERT_TRUE(graph.CompileGraph());
+    ASSERT_TRUE(graph.ExecuteGraph());
+
+    EXPECT_EQ(events, (std::vector<std::string>{
+        "construct-root",
+        "construct-dependent",
+        "post-root",
+        "post-dependent"
+    }));
 }
 
-TEST_F(GraphResolverFixture, Compile_PostDependancyCycle)
+TEST_F(GraphResolverFixture, ExecuteRequiresCompileAndCannotRunTwice)
 {
-    graph_resolver.AddModule<IFirstModule, FirstModOfIFirst, TypeList<>, TypeList<ISecondModule>>(
-        [](IGraphResolver*){return new FirstModOfIFirst;});
-    graph_resolver.AddModule<ISecondModule, FirstModOfISecond, TypeList<>, TypeList<IFirstModule>>(
-        [](IGraphResolver*){return new FirstModOfISecond;});
-    
-    ASSERT_EQ(graph_resolver.CompileGraph().code, GraphErrorCode::CycleDetected);
+    EXPECT_EQ(graph.ExecuteGraph().code, gr_GraphErrorCode::GraphNotCompiled);
+    ASSERT_TRUE(graph.CompileGraph());
+    ASSERT_TRUE(graph.ExecuteGraph());
+    EXPECT_EQ(graph.ExecuteGraph().code, gr_GraphErrorCode::GraphAlreadyExecuted);
 }
 
-TEST_F(GraphResolverFixture, DestroyInOrder_TakeModuleAfterDestruction)
+TEST_F(GraphResolverFixture, DestructInOrderDestroysModulesInReverseDependencyOrder)
 {
-    graph_resolver.AddModule<IFirstModule, FirstModOfIFirst>(
-        [](IGraphResolver*){return new FirstModOfIFirst;});
-    graph_resolver.CompileGraph();
-    graph_resolver.ExecuteGraph();
-    ASSERT_NE(graph_resolver.GetModule<IFirstModule>(), nullptr);
-    graph_resolver.DestructInOrder();
-    ASSERT_EQ(graph_resolver.GetModule<IFirstModule>(), nullptr);
+    ASSERT_TRUE((graph.AddModule<FirstModule>(
+        [](const gr_GraphResolverApi*, gr_GraphResolver*)
+        {
+            return static_cast<void*>(new FirstModule);
+        },
+        nullptr,
+        [](void* ptr)
+        {
+            events.emplace_back("destroy-first");
+            delete static_cast<FirstModule*>(ptr);
+        })));
+    ASSERT_TRUE((graph.AddModule<SecondModule, gr_TypeList<FirstModule>>(
+        [](const gr_GraphResolverApi*, gr_GraphResolver*)
+        {
+            return static_cast<void*>(new SecondModule);
+        },
+        nullptr,
+        [](void* ptr)
+        {
+            events.emplace_back("destroy-second");
+            delete static_cast<SecondModule*>(ptr);
+        })));
+    ASSERT_TRUE((graph.AddModule<ThirdModule, gr_TypeList<SecondModule>>(
+        [](const gr_GraphResolverApi*, gr_GraphResolver*)
+        {
+            return static_cast<void*>(new ThirdModule);
+        },
+        nullptr,
+        [](void* ptr)
+        {
+            events.emplace_back("destroy-third");
+            delete static_cast<ThirdModule*>(ptr);
+        })));
+
+    ASSERT_TRUE(graph.CompileGraph());
+    ASSERT_TRUE(graph.ExecuteGraph());
+    graph.DestructInOrder();
+
+    EXPECT_EQ(events, (std::vector<std::string>{
+        "destroy-third",
+        "destroy-second",
+        "destroy-first"
+    }));
+    EXPECT_EQ(graph.GetModule<FirstModule>(), nullptr);
+    EXPECT_EQ(graph.GetModule<SecondModule>(), nullptr);
+    EXPECT_EQ(graph.GetModule<ThirdModule>(), nullptr);
 }
+
+TEST_F(GraphResolverFixture, DestroyGraphClearsModulesAndAllowsReuse)
+{
+    ASSERT_TRUE(graph.AddModule<RootModule>(
+        [](const gr_GraphResolverApi*, gr_GraphResolver*)
+        {
+            return static_cast<void*>(new RootModule);
+        }));
+    ASSERT_TRUE(graph.CompileGraph());
+    ASSERT_TRUE(graph.ExecuteGraph());
+
+    graph.DestroyGraph();
+    EXPECT_FALSE(graph.HasModule<RootModule>());
+
+    ASSERT_TRUE(graph.AddModule<RootModule>(
+        [](const gr_GraphResolverApi*, gr_GraphResolver*)
+        {
+            return static_cast<void*>(new RootModule);
+        }));
+    ASSERT_TRUE(graph.CompileGraph());
+    ASSERT_TRUE(graph.ExecuteGraph());
+    EXPECT_NE(graph.GetModule<RootModule>(), nullptr);
+}
+
+} // namespace
