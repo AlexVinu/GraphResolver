@@ -89,21 +89,6 @@ static const audio_api g_audio_api = {
     &AudioRunImpl
 };
 
-extern "C" PLUGIN_API const window_api* CALL GetWindowApi()
-{
-    return &g_window_api;
-}
-
-extern "C" PLUGIN_API const render_api* CALL GetRenderApi()
-{
-    return &g_render_api;
-}
-
-extern "C" PLUGIN_API const audio_api* CALL GetAudioApi()
-{
-    return &g_audio_api;
-}
-
 extern "C" PLUGIN_API void CALL RegisterPlugins(const gr_GraphResolverApi* graph_api, gr_GraphResolver* graph)
 {
     std::cout << "Plugin compiled by: ";
@@ -130,65 +115,72 @@ extern "C" PLUGIN_API void CALL RegisterPlugins(const gr_GraphResolverApi* graph
 #endif
 
     gr_GraphResult audio_result;
-    AddModule<audio>(
+    AddModule<audio_adapter>(
         graph_api, 
         graph,
         &audio_result,
     [](const gr_GraphResolverApi* api, gr_GraphResolver* loader)
     {
         auto audio_impl = new AudioImpl;
-        return static_cast<void*>(new audio{audio_impl});
+        auto audio_ = new audio{audio_impl};
+        return static_cast<void*>(new audio_adapter{&g_audio_api, audio_});
     },
     nullptr,
     [](void* ptr)
     {
-        auto audio_ptr = static_cast<audio*>(ptr);
-        delete audio_ptr->impl;
-        delete audio_ptr;
+        auto audio_adapter_ptr = static_cast<audio_adapter*>(ptr);
+        delete audio_adapter_ptr->g_audio->impl;
+        delete audio_adapter_ptr->g_audio;
+        delete audio_adapter_ptr;
     }
 );
 
     gr_GraphResult window_result;
-    AddModule<window, gr_TypeList<>, gr_TypeList<render>>(
+    AddModule<window_adapter, gr_TypeList<>, gr_TypeList<render_adapter>>(
         graph_api, 
         graph,
         &window_result,
     [](const gr_GraphResolverApi* api, gr_GraphResolver* graph)
     {
         auto window_impl = new WindowImpl;
-        return static_cast<void*>(new window{window_impl});
+        auto window_ = new window{window_impl};
+        return static_cast<void*>(new window_adapter{&g_window_api, window_});
     },
     [](const gr_GraphResolverApi* api, gr_GraphResolver* graph, void* ptr)
     {
-        auto self_ptr = static_cast<window*>(ptr);
-        render* render_ptr = GetModule<render>(api, graph);
-        g_window_api.post_construct(self_ptr, &g_render_api, render_ptr);
+        auto self_ptr = static_cast<window_adapter*>(ptr);
+        auto* render_adapter_ptr = GetModule<render_adapter>(api, graph);
+        g_window_api.post_construct(self_ptr->g_window, &g_render_api, render_adapter_ptr->g_render);
     },
     [](void* ptr)
     {
-        auto window_ptr = static_cast<window*>(ptr);
-        delete window_ptr->impl;
-        delete window_ptr;
+        auto window_adapter_ptr = static_cast<window_adapter*>(ptr);
+        delete window_adapter_ptr->g_window->impl;
+        delete window_adapter_ptr->g_window;
+        delete window_adapter_ptr;
     }
 );
 
     gr_GraphResult render_result;
-    AddModule<render, gr_TypeList<window>>(
+    AddModule<render_adapter, gr_TypeList<window_adapter>>(
         graph_api,
         graph,
         &render_result,
     [](const gr_GraphResolverApi* api, gr_GraphResolver* graph)
     {
-        window* window_ptr = GetModule<window>(api, graph);
-        auto render_impl = new RenderImpl(&g_window_api, window_ptr);
-        return static_cast<void*>(new render(render_impl));
+        window_adapter* window_adapter_ptr = GetModule<window_adapter>(api, graph);
+        if(!window_adapter_ptr) {std::cout << "[PLUGIN ERROR]: window_adapter_ptr not found!\n";}
+        auto render_impl = new RenderImpl(&g_window_api, window_adapter_ptr->g_window);
+        auto render_ = new render{render_impl};
+        return static_cast<void*>(new render_adapter{&g_render_api, render_});
     },
     nullptr,
     [](void* ptr)
     {
-        auto render_ptr = static_cast<render*>(ptr);
-        delete render_ptr->impl;
-        delete render_ptr;
+        auto render_adapter_ptr = static_cast<render_adapter*>(ptr);
+        delete render_adapter_ptr->g_render->impl;
+        delete render_adapter_ptr->g_render;
+        delete render_adapter_ptr;
     }
 );
 

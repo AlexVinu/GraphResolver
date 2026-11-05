@@ -134,33 +134,21 @@ int main()
         std::cerr << "Trouble with register_plugins\n";
     }
 
-    using GetWindowApiFn = const window_api*(*)();
-    auto get_window_api = reinterpret_cast<GetWindowApiFn>(GetProc(lib, "GetWindowApi"));
-    if(!get_window_api) {std::cerr << "Trouble with get_window_api\n"; return -1;}
-
-    using GetRenderApiFn = const render_api*(*)();
-    auto get_render_api = reinterpret_cast<GetRenderApiFn>(GetProc(lib, "GetRenderApi"));
-    if(!get_render_api) {std::cerr << "Trouble with get_render_api\n"; return -1;}
-
-    using GetAudioApi = const audio_api*(*)();
-    auto get_audio_api = reinterpret_cast<GetAudioApi>(GetProc(lib, "GetAudioApi"));
-    if(!get_audio_api) {std::cerr << "Trouble with get_audio_api\n"; return -1;}
-
     loader.CompileGraph();
     loader.ExecuteGraph();
 
-    if(window* window_ptr = loader.GetModule<window>())
+    if(window_adapter* window_adapter_ptr = loader.GetModule<window_adapter>())
     {
-        get_window_api()->run(window_ptr);
+        window_adapter_ptr->g_window_api->run(window_adapter_ptr->g_window);
     }
     else {std::cerr << "Window wasnt loaded!\n";}
-    if(render* render_ptr = loader.GetModule<render>())
+    if(render_adapter* render_adapter_ptr = loader.GetModule<render_adapter>())
     {
-        get_render_api()->run(render_ptr);
+        render_adapter_ptr->g_render_api->run(render_adapter_ptr->g_render);
     } else {std::cerr << "Render wasnt loaded!\n";}
-    if(audio* audio_ptr = loader.GetModule<audio>())
+    if(audio_adapter* audio_adapter_ptr = loader.GetModule<audio_adapter>())
     {
-        get_audio_api()->run(audio_ptr);
+        audio_adapter_ptr->g_audio_api->run(audio_adapter_ptr->g_audio);
     } else {std::cerr << "Audio wasnt loaded!\n";}
     
     loader.DestroyGraph();

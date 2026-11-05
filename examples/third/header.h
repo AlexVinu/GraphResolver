@@ -17,6 +17,12 @@ typedef struct window_api
     void (CALL *run)(window* self);
 } window_api;
 
+typedef struct window_adapter
+{
+    const window_api* g_window_api;
+    window* g_window;
+} window_adapter;
+
 typedef struct render_api
 {
     uint32_t struct_size;
@@ -25,6 +31,12 @@ typedef struct render_api
     void (CALL *run)(render* self);
 } render_api;
 
+typedef struct render_adapter
+{
+    const render_api* g_render_api;
+    render* g_render;
+} render_adapter;
+
 typedef struct audio_api
 {
     uint32_t struct_size;
@@ -32,10 +44,13 @@ typedef struct audio_api
     void (CALL *run)(audio* self);
 } audio_api;
 
+typedef struct audio_adapter
+{
+    const audio_api* g_audio_api;
+    audio* g_audio;
+} audio_adapter;
+
 extern "C"
 {
     PLUGIN_API void RegisterPlugins(const gr_GraphResolverApi*, gr_GraphResolver*);
-    PLUGIN_API const window_api* CALL GetWindowApi();
-    PLUGIN_API const render_api* CALL GetRenderApi();
-    PLUGIN_API const audio_api* CALL GetAudioApi();
 }
