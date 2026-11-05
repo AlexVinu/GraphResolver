@@ -3,6 +3,7 @@
 #include "graph_resolver/internal/module_slot.h"
 #include "graph_resolver/api/graph_resolver_api.h"
 
+extern "C" const gr_GraphResolverApi* CALL gr_GetGraphResolverApi();
 class gr_GraphResolver
 {
 public:

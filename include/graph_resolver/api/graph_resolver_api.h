@@ -14,8 +14,6 @@ struct gr_GraphResolverApi
     void (CALL *add_module_from_descriptor)(gr_GraphResolver* self, gr_ModuleSlotDescriptor* desc, gr_GraphResult* result);
 };
 
-extern "C" const gr_GraphResolverApi* CALL gr_GetGraphResolverApi();
-
 template<
     class T,
     typename DEPS = gr_TypeList<>,
