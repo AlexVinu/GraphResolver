@@ -52,5 +52,5 @@ typedef struct audio_adapter
 
 extern "C"
 {
-    PLUGIN_API void RegisterPlugins(const gr_GraphResolverApi*, gr_GraphResolver*);
+    PLUGIN_API void RegisterPlugins(const gr_GraphResolverApi*, gr_GraphResolver*) noexcept;
 }

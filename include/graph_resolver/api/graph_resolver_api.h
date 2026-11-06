@@ -1,17 +1,19 @@
 #pragma once
 
+#include "graph_resolver/api/core.h"
 #include "module_slot_desc.h"
+#include <cstddef>
 
 struct gr_GraphResolverApi
 {
     uint32_t struct_size;
-    void (CALL *execute_graph)(gr_GraphResolver* self, gr_GraphResult* result);
-    void (CALL *compile_graph)(gr_GraphResolver* self, gr_GraphResult* result);
-    void (CALL *destruct_in_order)(gr_GraphResolver* self);
-    void (CALL *destroy_graph)(gr_GraphResolver* self);
-    bool (CALL *has_module)(gr_GraphResolver* self, gr_modid_t indx);
-    void* (CALL *get_module_int)(gr_GraphResolver* self, gr_modid_t indx);
-    void (CALL *add_module_from_descriptor)(gr_GraphResolver* self, gr_ModuleSlotDescriptor* desc, gr_GraphResult* result);
+    void (CALL *execute_graph)(gr_GraphResolver* self, gr_GraphResult* result) noexcept;
+    void (CALL *compile_graph)(gr_GraphResolver* self, gr_GraphResult* result) noexcept;
+    void (CALL *destruct_in_order)(gr_GraphResolver* self, gr_GraphResult* result) noexcept;
+    void (CALL *destroy_graph)(gr_GraphResolver* self, gr_GraphResult* result) noexcept;
+    bool (CALL *has_module)(gr_GraphResolver* self, gr_modid_t indx, gr_GraphResult* result) noexcept;
+    void* (CALL *get_module_int)(gr_GraphResolver* self, gr_modid_t indx, gr_GraphResult* result) noexcept;
+    void (CALL *add_module_from_descriptor)(gr_GraphResolver* self, gr_ModuleSlotDescriptor* desc, gr_GraphResult* result) noexcept;
 };
 
 template<
@@ -20,9 +22,9 @@ template<
     typename POSTDEPS = gr_TypeList<>
     >
 gr_ModuleSlotDescriptor CreateModuleSlotDescriptor(
-    gr_ConstructFn construct,
-    gr_PostConstructFn post_construct = nullptr,
-    gr_DestructFn destruct = gr_ModuleSlotDefaultDestruct<T>)
+    gr_ConstructFnApi construct,
+    gr_PostConstructFnApi post_construct,
+    gr_DestructFnApi destruct)
 {
     gr_ModuleSlotDescriptor desc{};
     desc.struct_size = sizeof(gr_ModuleSlotDescriptor);
@@ -47,14 +49,14 @@ void AddModule(
     const gr_GraphResolverApi* graph_api,
     gr_GraphResolver* graph_resolver,
     gr_GraphResult* result,
-    gr_ConstructFn construct,
-    gr_PostConstructFn post_construct = nullptr,
-    gr_DestructFn destruct = gr_ModuleSlotDefaultDestruct<T>)
+    gr_ConstructFnApi construct,
+    gr_PostConstructFnApi post_construct,
+    gr_DestructFnApi destruct)
 {
     *result = {gr_GraphErrorCode::Success, ""};
     gr_modid_t indx = hash_string(GET_TYPE_NAME(T));
     std::string_view view = GET_TYPE_NAME(T);
-    if(graph_api->has_module(graph_resolver, indx)){
+    if(graph_api->has_module(graph_resolver, indx, nullptr)){
         result->code = gr_GraphErrorCode::DuplicateModuleID;
         result->SetModName(view);
         return;
@@ -68,15 +70,15 @@ void AddModule(
 }
 
 template<class T>
-T* GetModule(const gr_GraphResolverApi* graph_api, gr_GraphResolver* graph_resolver)
+T* GetModule(const gr_GraphResolverApi* graph_api, gr_GraphResolver* graph_resolver, gr_GraphResult* result = nullptr)
 {
     gr_modid_t indx(hash_string(GET_TYPE_NAME(T)));
-    return static_cast<T*>(graph_api->get_module_int(graph_resolver, indx));
+    return static_cast<T*>(graph_api->get_module_int(graph_resolver, indx, result));
 }
 
 template<class T>
-bool HasModule(const gr_GraphResolverApi* graph_api, gr_GraphResolver* graph_resolver)
+bool HasModule(const gr_GraphResolverApi* graph_api, gr_GraphResolver* graph_resolver, gr_GraphResult* result = nullptr)
 {
     gr_modid_t indx(hash_string(GET_TYPE_NAME(T)));
-    return graph_api->has_module(graph_resolver, indx);
+    return graph_api->has_module(graph_resolver, indx, result);
 }

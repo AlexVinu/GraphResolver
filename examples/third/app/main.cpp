@@ -125,7 +125,7 @@ int main()
         return 1;
     }
 
-    using RegisterPluginsFn = void(CALL *)(const gr_GraphResolverApi*, gr_GraphResolver*);
+    using RegisterPluginsFn = void(CALL *)(const gr_GraphResolverApi*, gr_GraphResolver*) noexcept;
     auto register_plugins = reinterpret_cast<RegisterPluginsFn>(GetProc(lib, "RegisterPlugins"));
     if (register_plugins) {
         register_plugins(gr_GetGraphResolverApi(), &loader);

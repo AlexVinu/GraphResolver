@@ -56,7 +56,7 @@ void gr_ModuleSlot::PostConstruct(const gr_GraphResolverApi* api, gr_GraphResolv
 }
 void gr_ModuleSlot::Destruct()  
 {
-    p_Impl->m_ModulePtr = nullptr;
+    p_Impl->m_ModulePtr.reset();
 }
 
 gr_ModIdView gr_ModuleSlot::GetDeps() const  {return p_Impl->m_Deps;}

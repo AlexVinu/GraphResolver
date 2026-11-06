@@ -30,6 +30,8 @@ enum class gr_GraphErrorCode : uint8_t
     GraphNotCompiled    = 4,
     GraphAlreadyExecuted= 5,
     InvalidDependencyList = 6,
+    GraphNotExecuted    = 7,
+    DifferentAPIVersion = 8,
 
     UNKNOWN             = 255
 };
@@ -133,5 +135,14 @@ typedef void(CALL *gr_PostConstructFn)(const gr_GraphResolverApi*, gr_GraphResol
 typedef void(CALL *gr_DestructFn)(void*);
 
 template<class T>
-inline auto gr_ModuleSlotDefaultDestruct = [](void* ptr) { delete static_cast<T*>(ptr); };
+void gr_ModuleSlotDefaultDestruct(void* ptr)
+{
+    delete static_cast<T*>(ptr);
+}
+
+typedef void*(CALL *gr_ConstructFnApi)(const gr_GraphResolverApi*, gr_GraphResolver*) noexcept;
+
+typedef void(CALL *gr_PostConstructFnApi)(const gr_GraphResolverApi*, gr_GraphResolver*, void*) noexcept;
+
+typedef void(CALL *gr_DestructFnApi)(void*) noexcept;
 // -----------------------------------------------------------
