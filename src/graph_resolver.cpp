@@ -3,20 +3,24 @@
 #include <functional>
 #include <queue>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
+#include <memory>
 
 #include "graph_resolver/internal/graph_resolver.h"
 #include "graph_resolver/api/core.h"
+#include "graph_resolver/internal/module_slot.h"
 
 
 // ---------------------- Types for graph ----------------------------
-using ModuleMapType = std::unordered_map<gr_modid_t, gr_ModuleSlot*>;
+using ModuleUniquePtr = std::unique_ptr<gr_ModuleSlot>;
+using ModuleMapType = std::unordered_map<gr_modid_t, ModuleUniquePtr>;
 using OrderType = std::vector<gr_modid_t>;
 // --------------------------------------------------------------------
 
 static gr_GraphResult MakeGraph(const ModuleMapType& module_slots,
         OrderType& exec_order,
-        std::function<const gr_ModIdView(const gr_ModuleSlot*)> get_func);
+        std::function<const gr_ModIdView(const ModuleUniquePtr&)> get_func);
 
 static gr_ModuleSlot* CreateModuleSlotFromDescriptor(gr_ModuleSlotDescriptor* desc)
 {
@@ -70,29 +74,29 @@ gr_GraphResult gr_GraphResolver::CompileGraph()
     p_Impl->isCompiled = false;
 
     const auto init_success = MakeGraph(p_Impl->moduleSlots, p_Impl->initOrder, 
-        [](const gr_ModuleSlot* mod_slot){return mod_slot->GetDeps();});
+        [](const ModuleUniquePtr& mod_slot){return mod_slot->GetDeps();});
     if(!init_success) return init_success;
     
     const auto post_init_success = MakeGraph(p_Impl->moduleSlots, p_Impl->postInitOrder, 
-        [](const gr_ModuleSlot* mod_slot){return mod_slot->GetPostDeps();});
+        [](const ModuleUniquePtr& mod_slot){return mod_slot->GetPostDeps();});
     if(!post_init_success) return post_init_success;
     
     p_Impl->isCompiled = true;
     p_Impl->isExecuted = false;
 
-    return {gr_GraphErrorCode::Success};
+    return MakeGraphResult(gr_GraphErrorCode::Success);
 }
 
 gr_GraphResult gr_GraphResolver::ExecuteGraph()
 {
     if(p_Impl->isExecuted) 
     {
-        return {gr_GraphErrorCode::GraphAlreadyExecuted};
+        return MakeGraphResult(gr_GraphErrorCode::GraphAlreadyExecuted);
     }
     
     if(!p_Impl->isCompiled) 
     {
-        return {gr_GraphErrorCode::GraphNotCompiled};
+        return MakeGraphResult(gr_GraphErrorCode::GraphNotCompiled);
     }
 
     auto api = gr_GetGraphResolverApi();
@@ -114,25 +118,18 @@ gr_GraphResult gr_GraphResolver::ExecuteGraph()
     {
         p_Impl->isExecuted = false;
         DestructInOrder();
-        return {gr_GraphErrorCode::GraphNotExecuted};
+        return MakeGraphResult(gr_GraphErrorCode::GraphNotExecuted);
     }
 
     p_Impl->isExecuted = true;
-    return {gr_GraphErrorCode::Success};
+    return MakeGraphResult(gr_GraphErrorCode::Success);
 }
 
 void gr_GraphResolver::DestroyGraph()
 {
-    // First - destroy compiled graph
     for (const auto idx : std::views::reverse(p_Impl->initOrder))
     {
-        p_Impl->moduleSlots[idx]->DestroySelf();
         p_Impl->moduleSlots.erase(idx);
-    }
-    // Second - if graph wasnt fully compiled
-    for(const auto&[idx, mod]: p_Impl->moduleSlots)
-    {
-        mod->DestroySelf();
     }
 
     p_Impl->Clear();
@@ -140,7 +137,7 @@ void gr_GraphResolver::DestroyGraph()
 
 gr_GraphResult MakeGraph(const ModuleMapType& module_slots,
         OrderType& exec_order,
-        std::function<const gr_ModIdView(const gr_ModuleSlot*)> get_func)
+        std::function<const gr_ModIdView(const ModuleUniquePtr&)> get_func)
 {
     exec_order.clear();
     
@@ -159,10 +156,17 @@ gr_GraphResult MakeGraph(const ModuleMapType& module_slots,
             result.SetModName(std::string_view(name.data, name.size));
             return result;
         }
+
         in_degree[type] = 0;
+        std::unordered_set<gr_modid_t> seen_deps;
         for(const auto dep: deps)
         {
-            if(!module_slots.contains(dep)) 
+            if (!seen_deps.insert(dep).second)
+            {
+                continue;
+            }
+
+            if(!module_slots.contains(dep))
             {
                 gr_GraphResult result{};
                 result.code = gr_GraphErrorCode::MissingDependancy;
@@ -210,18 +214,22 @@ gr_GraphResult MakeGraph(const ModuleMapType& module_slots,
         result.SetModName(std::string_view(trouble_mod_name.data, trouble_mod_name.size));
         return result;
     }
-    return {gr_GraphErrorCode::Success};
+    return MakeGraphResult(gr_GraphErrorCode::Success);
 }
 
 gr_GraphResult gr_GraphResolver::AddModuleFromDescriptor(gr_ModuleSlotDescriptor* desc)
 {
+    if (!desc)
+    {
+        return MakeGraphResult(gr_GraphErrorCode::UNKNOWN);
+    }
     if(desc->struct_size < sizeof(gr_ModuleSlotDescriptor))
     {
-        return {gr_GraphErrorCode::DifferentAPIVersion};
+        return MakeGraphResult(gr_GraphErrorCode::DifferentAPIVersion);
     }
-    if (!desc || (desc->type_name.size != 0 && desc->type_name.data == nullptr))
+    if (desc->type_name.size != 0 && desc->type_name.data == nullptr)
     {
-        return {gr_GraphErrorCode::UNKNOWN};
+        return MakeGraphResult(gr_GraphErrorCode::UNKNOWN);
     }
 
     gr_modid_t indx = desc->module_id;
@@ -242,7 +250,7 @@ gr_GraphResult gr_GraphResolver::AddModuleFromDescriptor(gr_ModuleSlotDescriptor
 
     gr_ModuleSlot* module_slot = CreateModuleSlotFromDescriptor(desc);
     AddModule(indx, module_slot);
-    return {gr_GraphErrorCode::Success};
+    return MakeGraphResult(gr_GraphErrorCode::Success);
 }
 
 void* gr_GraphResolver::GetModuleInt(gr_modid_t indx)
@@ -257,7 +265,7 @@ void* gr_GraphResolver::GetModuleInt(gr_modid_t indx)
 
 void gr_GraphResolver::AddModule(gr_modid_t indx, gr_ModuleSlot* module_slot)
 {
-    p_Impl->moduleSlots[indx] = module_slot;
+    p_Impl->moduleSlots[indx] = ModuleUniquePtr(module_slot);
 }
 
 bool gr_GraphResolver::HasModule(gr_modid_t indx)
@@ -276,7 +284,7 @@ void CALL ExecuteGraph(gr_GraphResolver* self, gr_GraphResult* result) noexcept
     }
     catch(...)
     {
-        if(result) *result = {gr_GraphErrorCode::UNKNOWN};
+        if(result) *result = MakeGraphResult(gr_GraphErrorCode::UNKNOWN);
     }
 }
 
@@ -290,7 +298,7 @@ void CALL CompileGraph(gr_GraphResolver* self, gr_GraphResult* result) noexcept
     }
     catch(...)
     {
-        if(result) *result = {gr_GraphErrorCode::UNKNOWN};
+        if(result) *result = MakeGraphResult(gr_GraphErrorCode::UNKNOWN);
     }
 }
 
@@ -300,11 +308,11 @@ void CALL DestructInOrder(gr_GraphResolver* self, gr_GraphResult* result) noexce
     try
     {
         self->DestructInOrder();
-        if(result) *result={gr_GraphErrorCode::Success};
+        if(result) *result = MakeGraphResult(gr_GraphErrorCode::Success);
     }
     catch(...)
     {
-        if(result) *result = {gr_GraphErrorCode::UNKNOWN};
+        if(result) *result = MakeGraphResult(gr_GraphErrorCode::UNKNOWN);
     }
 }
 
@@ -314,11 +322,11 @@ void CALL DestroyGraph(gr_GraphResolver* self, gr_GraphResult* result) noexcept
     try
     {
         self->DestroyGraph();
-        if(result) *result = {gr_GraphErrorCode::Success};
+        if(result) *result = MakeGraphResult(gr_GraphErrorCode::Success);
     }
     catch(...)
     {
-        if(result) *result = {gr_GraphErrorCode::UNKNOWN};
+        if(result) *result = MakeGraphResult(gr_GraphErrorCode::UNKNOWN);
     }
 }
 
@@ -328,12 +336,12 @@ bool CALL HasModule(gr_GraphResolver* self, gr_modid_t indx, gr_GraphResult* res
     try
     {
         auto res = self->HasModule(indx);
-        if(result) *result = {gr_GraphErrorCode::Success};
+        if(result) *result = MakeGraphResult(gr_GraphErrorCode::Success);
         return res;
     }
     catch(...)
     {
-        if(result) *result = {gr_GraphErrorCode::UNKNOWN};
+        if(result) *result = MakeGraphResult(gr_GraphErrorCode::UNKNOWN);
         return false;
     }
 }
@@ -344,12 +352,12 @@ void* CALL GetModuleInt(gr_GraphResolver* self, gr_modid_t indx, gr_GraphResult*
     try
     {
         auto res = self->GetModuleInt(indx);
-        if(result) *result = {gr_GraphErrorCode::Success};
+        if(result) *result = MakeGraphResult(gr_GraphErrorCode::Success);
         return res;
     }
     catch(...)
     {
-        if(result) *result = {gr_GraphErrorCode::UNKNOWN};
+        if(result) *result = MakeGraphResult(gr_GraphErrorCode::UNKNOWN);
         return nullptr;
     }
 }
@@ -364,7 +372,7 @@ void CALL AddModuleFromDescriptor(gr_GraphResolver* self, gr_ModuleSlotDescripto
     }
     catch(...)
     {
-        if(result) *result = {gr_GraphErrorCode::UNKNOWN};
+        if(result) *result = MakeGraphResult(gr_GraphErrorCode::UNKNOWN);
     }
 }
 

@@ -32,7 +32,7 @@ public:
 
         gr_ModuleSlot* module_slot = CreateModuleSlot<T, DEPS, POSTDEPS>(construct, post_construct, destruct);
         AddModule(indx, module_slot);
-        return {gr_GraphErrorCode::Success};
+        return MakeGraphResult(gr_GraphErrorCode::Success);
     }
 
     template<class T>

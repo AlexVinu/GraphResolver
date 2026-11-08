@@ -2,7 +2,7 @@
 
 #include "core.h"
 
-struct gr_GraphResolver;
+class gr_GraphResolver;
 
 struct gr_ModuleSlotDescriptor
 {

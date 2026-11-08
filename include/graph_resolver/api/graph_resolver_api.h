@@ -53,7 +53,7 @@ void AddModule(
     gr_PostConstructFnApi post_construct,
     gr_DestructFnApi destruct)
 {
-    *result = {gr_GraphErrorCode::Success, ""};
+    *result = MakeGraphResult(gr_GraphErrorCode::Success);
     gr_modid_t indx = hash_string(GET_TYPE_NAME(T));
     std::string_view view = GET_TYPE_NAME(T);
     if(graph_api->has_module(graph_resolver, indx, nullptr)){

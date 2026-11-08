@@ -76,6 +76,40 @@ TEST_F(GraphResolverFixture, CompileRejectsMissingDependency)
     EXPECT_EQ(result.code, gr_GraphErrorCode::MissingDependancy);
 }
 
+TEST_F(GraphResolverFixture, CompileIgnoresDuplicateDependencyEntries)
+{
+    ASSERT_TRUE(graph.AddModule<RootModule>(
+        [](const gr_GraphResolverApi*, gr_GraphResolver*)
+        {
+            return static_cast<void*>(new RootModule);
+        }));
+
+    const gr_modid_t root_id = hash_string(GET_TYPE_NAME(RootModule));
+    const gr_modid_t dependent_id = hash_string(GET_TYPE_NAME(DependentModule));
+    std::array<gr_modid_t, 2> duplicated_deps = {root_id, root_id};
+
+    gr_ModuleSlotDescriptor desc{};
+    desc.struct_size = sizeof(gr_ModuleSlotDescriptor);
+    desc.construct = [](const gr_GraphResolverApi*, gr_GraphResolver*)
+    {
+        return static_cast<void*>(new DependentModule);
+    };
+    desc.post_construct = nullptr;
+    desc.destruct = [](void* ptr)
+    {
+        delete static_cast<DependentModule*>(ptr);
+    };
+    desc.module_id = dependent_id;
+    const auto dependent_type_name = GET_TYPE_NAME(DependentModule);
+    desc.type_name.data = dependent_type_name.data();
+    desc.type_name.size = dependent_type_name.size();
+    desc.deps = gr_ModIdView::From(duplicated_deps.data(), static_cast<gr_modcount_t>(duplicated_deps.size()));
+    desc.post_deps = gr_ModIdView::From(nullptr, 0);
+
+    ASSERT_TRUE(graph.AddModuleFromDescriptor(&desc));
+    EXPECT_TRUE(graph.CompileGraph());
+}
+
 TEST_F(GraphResolverFixture, CompileRejectsDependencyCycle)
 {
     ASSERT_TRUE((graph.AddModule<CycleModuleA, gr_TypeList<CycleModuleB>>(

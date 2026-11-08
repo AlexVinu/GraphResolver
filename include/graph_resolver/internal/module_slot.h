@@ -23,7 +23,6 @@ public:
     gr_ModIdView GetDeps() const;
     gr_ModIdView GetPostDeps() const;
     void* GetModulePtr() const;
-    void DestroySelf();
     gr_StringView GetTypeName() const;
 private:
     struct Impl;

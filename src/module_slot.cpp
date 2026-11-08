@@ -65,8 +65,6 @@ gr_ModIdView gr_ModuleSlot::GetPostDeps() const  {return p_Impl->m_PostDeps;}
 
 void* gr_ModuleSlot::GetModulePtr() const  {return p_Impl->m_ModulePtr.get();}
 
-void gr_ModuleSlot::DestroySelf()  {delete this;}
-
 gr_StringView gr_ModuleSlot::GetTypeName() const  
 {
     return {p_Impl->m_TypeName.data(), p_Impl->m_TypeName.size()};

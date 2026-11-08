@@ -7,6 +7,8 @@
 #include <cstring>
 #include <cassert>
 #include <string_view>
+#include <ranges>
+#include <array>
 
 #include "graph_resolver/utils/macro.h"
 #include "graph_resolver/utils/hash_string.h"
@@ -101,18 +103,44 @@ struct gr_GraphResult
     operator bool() const noexcept {return IsOk();}
 };
 
-template<class... T>
-struct gr_TypeList
+inline gr_GraphResult MakeGraphResult(gr_GraphErrorCode code = gr_GraphErrorCode::Success,
+    std::string_view name = {}) noexcept
 {
+    gr_GraphResult result{code, {}, 0, 0};
+    if (!name.empty())
+    {
+        result.SetModName(name);
+    }
+    return result;
+}
+
+template<class... T>
+class gr_TypeList
+{
+public:
     static constexpr gr_modcount_t size = sizeof...(T);
     static inline constexpr gr_modid_t arr[size > 0 ? size : 1] = {hash_string(GET_TYPE_NAME(T))...};
 
-    static constexpr gr_ModIdView get() noexcept
+    static consteval gr_ModIdView get() noexcept
     {
         static_assert(sizeof...(T) <= gr_ModIdView::capacity,
             "gr_TypeList exceeds gr_ModIdView capacity");
         return gr_ModIdView::From(arr, size);
     }
+private:
+    static consteval bool check_collisions() noexcept
+    {
+        if constexpr (size < 2)
+            return false;
+        std::array<gr_modid_t, size> array{};
+
+        std::ranges::copy(arr, array.begin());
+        std::ranges::sort(array);
+
+        return std::ranges::adjacent_find(array) != array.end();
+    };
+    static_assert(!check_collisions(), 
+        "gr_TypeList collisions found! Same type added or hasher given a collision");
 };
 
 template<class T>
@@ -124,7 +152,7 @@ struct gr_is_type_list<gr_TypeList<Ts...>> : std::true_type {};
 template<class T>
 concept gr_IsTypeList = gr_is_type_list<T>::value;
 
-struct gr_GraphResolver;
+class gr_GraphResolver;
 struct gr_GraphResolverApi;
 
 // ----------------- Functions signatures --------------------
