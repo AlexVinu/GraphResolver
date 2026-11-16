@@ -1,5 +1,6 @@
 #pragma once
 
+#include "graph_resolver/api/core.h"
 #include "graph_resolver/internal/module_slot.h"
 #include "graph_resolver/api/graph_resolver_api.h"
 
@@ -15,13 +16,13 @@ public:
         class T,
         typename DEPS = gr_TypeList<>,
         typename POSTDEPS = gr_TypeList<>
-        >
+        > requires gr_HasID<T>
     gr_GraphResult AddModule(
         gr_ConstructFn construct,
         gr_PostConstructFn post_construct = nullptr,
         gr_DestructFn destruct = gr_ModuleSlotDefaultDestruct<T>) 
     {
-        gr_modid_t indx = hash_string(GET_TYPE_NAME(T));
+        gr_modid_t indx = T::ID;
         std::string_view view = GET_TYPE_NAME(T);
         if(HasModule(indx)){
             gr_GraphResult result{};
@@ -38,14 +39,14 @@ public:
     template<class T>
     T* GetModule()
     {
-        gr_modid_t indx(hash_string(GET_TYPE_NAME(T)));
+        gr_modid_t indx(T::ID);
         return static_cast<T*>(GetModuleInt(indx));
     }
 
     template<class T>
     bool HasModule()
     {
-        gr_modid_t indx = hash_string(GET_TYPE_NAME(T));
+        gr_modid_t indx = T::ID;
         return HasModule(indx);
     }
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
@@ -7,11 +8,9 @@
 #include <cstring>
 #include <cassert>
 #include <string_view>
-#include <ranges>
-#include <array>
 
+#include "graph_resolver/api/mod_id.h"
 #include "graph_resolver/utils/macro.h"
-#include "graph_resolver/utils/hash_string.h"
 
 #if defined(_WIN32)
     #define CALL __cdecl
@@ -19,9 +18,57 @@
     #define CALL
 #endif
 
+constexpr gr_modid_t hash_string(std::string_view str)
+{
+    // FNV-1a 128-bit offset basis
+    uint64_t high = 0x6C62272E07BB0142ULL;
+    uint64_t low  = 0x62B821756295C58DULL;
 
-typedef uint64_t gr_modid_t;
-typedef uint16_t gr_modcount_t;
+    // FNV-1a 128-bit prime
+    constexpr uint64_t prime_high = 0x0000000001000000ULL;
+    constexpr uint64_t prime_low  = 0x13BULL;
+
+    for (unsigned char c : str)
+    {
+        low ^= c;
+
+        const uint64_t a = low;
+        const uint64_t b = prime_low;
+
+        const uint64_t a0 = static_cast<uint32_t>(a);
+        const uint64_t a1 = a >> 32;
+        const uint64_t b0 = static_cast<uint32_t>(b);
+        const uint64_t b1 = b >> 32;
+
+        const uint64_t w0 = a0 * b0;
+        const uint64_t t  = a1 * b0 + (w0 >> 32);
+        const uint64_t w1 = (t & 0xFFFFFFFFULL) + a0 * b1;
+        const uint64_t carry =
+            a1 * b1 + (t >> 32) + (w1 >> 32);
+
+        const uint64_t new_low =
+            (w1 << 32) | (w0 & 0xFFFFFFFFULL);
+
+        high = high * prime_low + low * prime_high + carry;
+        low = new_low;
+    }
+
+    return { high, low };
+}
+
+#define MODULE_MAKE_HASH(X) \
+    inline static constexpr gr_modid_t ID = hash_string(#X);
+
+template<typename T>
+concept gr_HasID = requires
+{
+    requires std::same_as<
+        std::remove_cvref_t<decltype(T::ID)>,
+        gr_modid_t
+    >;
+};
+
+using gr_modcount_t = uint64_t;
 
 enum class gr_GraphErrorCode : uint8_t
 {
@@ -115,11 +162,12 @@ inline gr_GraphResult MakeGraphResult(gr_GraphErrorCode code = gr_GraphErrorCode
 }
 
 template<class... T>
+    requires (gr_HasID<T> && ...)
 class gr_TypeList
 {
 public:
     static constexpr gr_modcount_t size = sizeof...(T);
-    static inline constexpr gr_modid_t arr[size > 0 ? size : 1] = {hash_string(GET_TYPE_NAME(T))...};
+    static inline constexpr gr_modid_t arr[size > 0 ? size : 1] = {T::ID...};
 
     static consteval gr_ModIdView get() noexcept
     {
@@ -130,14 +178,15 @@ public:
 private:
     static consteval bool check_collisions() noexcept
     {
-        if constexpr (size < 2)
-            return false;
-        std::array<gr_modid_t, size> array{};
-
-        std::ranges::copy(arr, array.begin());
-        std::ranges::sort(array);
-
-        return std::ranges::adjacent_find(array) != array.end();
+        for (std::size_t i = 0; i < size; ++i)
+        {
+            for (std::size_t j = i + 1; j < size; ++j)
+            {
+                if (arr[i] == arr[j])
+                    return true;
+            }
+        }
+        return false;
     };
     static_assert(!check_collisions(), 
         "gr_TypeList collisions found! Same type added or hasher given a collision");

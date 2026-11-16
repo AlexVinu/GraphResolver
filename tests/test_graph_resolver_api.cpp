@@ -8,6 +8,8 @@ namespace
 
 struct ApiModule
 {
+    MODULE_MAKE_HASH(ApiService)
+
     int value = 42;
 };
 
@@ -38,8 +40,8 @@ TEST(GraphResolverApiTest, PluginApiRegistersExecutesAndDestroysModule)
     );
 
     ASSERT_TRUE(add_result);
-    EXPECT_TRUE(api->has_module(&graph, hash_string(GET_TYPE_NAME(ApiModule)), nullptr));
-    EXPECT_EQ(api->get_module_int(&graph, hash_string(GET_TYPE_NAME(ApiModule)), nullptr), nullptr);
+    EXPECT_TRUE(api->has_module(&graph, ApiModule::ID, nullptr));
+    EXPECT_EQ(api->get_module_int(&graph, ApiModule::ID, nullptr), nullptr);
 
     gr_GraphResult result{};
     api->compile_graph(&graph, &result);
@@ -48,12 +50,12 @@ TEST(GraphResolverApiTest, PluginApiRegistersExecutesAndDestroysModule)
     ASSERT_TRUE(result);
 
     auto* module = static_cast<ApiModule*>(
-        api->get_module_int(&graph, hash_string(GET_TYPE_NAME(ApiModule)), nullptr));
+        api->get_module_int(&graph, ApiModule::ID, nullptr));
     ASSERT_NE(module, nullptr);
     EXPECT_EQ(module->value, 42);
 
     api->destroy_graph(&graph, nullptr);
-    EXPECT_FALSE(api->has_module(&graph, hash_string(GET_TYPE_NAME(ApiModule)), nullptr));
+    EXPECT_FALSE(api->has_module(&graph, ApiModule::ID, nullptr));
 }
 
 TEST(GraphResolverApiTest, ReportsDuplicateModuleId)

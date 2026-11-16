@@ -33,7 +33,7 @@ template<
     class T,
     typename DEPS = gr_TypeList<>,
     typename POSTDEPS = gr_TypeList<>
-    >
+    > requires gr_HasID<T>
 gr_ModuleSlot* CreateModuleSlot(gr_ConstructFn construct,
     gr_PostConstructFn post_construct,
     gr_DestructFn destruct)

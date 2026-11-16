@@ -10,6 +10,8 @@ using namespace std;
 class Logger
 {
 public:
+    MODULE_MAKE_HASH(Logger)
+
     Logger(string prog_name)
         {std::cout << "Logger constructor! Program name: " << prog_name <<endl;}
     ~Logger(){std::cout << "Logger destructor!\n";}
@@ -19,6 +21,8 @@ public:
 class Window
 {
 public:
+    MODULE_MAKE_HASH(Window)
+
     Window(){std::cout << "Window constructor!\n";}
     ~Window(){std::cout << "Window destructor!\n";}
     void Run()  {cout << "Window run!\n";}
@@ -28,6 +32,8 @@ public:
 class Render
 {
 public:
+    MODULE_MAKE_HASH(Render)
+
     Render(Window* w_ptr){std::cout << "Render constructor! Window module ptr: " <<w_ptr << endl;}
     ~Render(){std::cout << "Render destructor!\n";}
     void Run()  {cout << "Render run!\n";}
@@ -37,6 +43,8 @@ public:
 class Audio
 {
 public:
+    MODULE_MAKE_HASH(Audio)
+
     Audio(){std::cout << "Audio constructorr!\n";}
     ~Audio(){std::cout << "Audio destructor!\n";}
     void Run()  {cout << "Audio run!\n";}
@@ -45,6 +53,8 @@ public:
 class Input
 {
 public:
+    MODULE_MAKE_HASH(Input)
+
     Input(Window* window){std::cout << "Input constructor! Window module ptr: " << window << endl;}
     ~Input(){std::cout << "Input destructor!\n";}
     void Run()  {cout << "Input run!\n";}
@@ -53,6 +63,8 @@ public:
 class Physics
 {
 public:
+    MODULE_MAKE_HASH(Physics)
+
     Physics(Logger* logger){std::cout << "Physics constructor! Logger module ptr: " << logger << endl;}
     ~Physics(){std::cout << "Physics destructor!\n";}
     void Run()  {cout << "Physics run!\n";}
@@ -61,6 +73,8 @@ public:
 class Scene
 {
 public:
+    MODULE_MAKE_HASH(Scene)
+
     Scene(Render* render, Physics* physics){
         std::cout << "Scene constructor! Render module ptr: " << render
                   << ", Physics module ptr: " << physics << endl;
@@ -72,6 +86,8 @@ public:
 class Game
 {
 public:
+    MODULE_MAKE_HASH(Game)
+
     Game(Scene* scene, Input* input, Audio* audio){
         std::cout << "Game constructor! Scene module ptr: " << scene
                   << ", Input module ptr: " << input
@@ -84,6 +100,8 @@ public:
 class EngineStats
 {
 public:
+    MODULE_MAKE_HASH(EngineStats)
+
     EngineStats(Render* render, Physics* physics){
         std::cout << "EngineStats constructor! Render module ptr: " << render
                   << ", Physics module ptr: " << physics << endl;

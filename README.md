@@ -38,11 +38,15 @@ ctest --test-dir build --output-on-failure
 
 struct Logger
 {
+    MODULE_MAKE_HASH(Logger)
+
     Logger() = default;
 };
 
 struct Renderer
 {
+    MODULE_MAKE_HASH(Renderer)
+
     Renderer(Logger* logger) {}
 };
 
@@ -84,7 +88,7 @@ int main()
 
 ### 1. Модуль
 
-Модуль — это сущность с типом, фабрикой создания, необязательным post-construct callback и деструктором. Фабрика возвращает указатель на объект, который затем будет храниться в контейнере библиотеки.
+Модуль — это сущность с типом, явным ID через `MODULE_MAKE_HASH(name)`, фабрикой создания, необязательным post-construct callback и деструктором. Имя в макросе определяет ID независимо от имени класса. Фабрика возвращает указатель на объект, который затем будет храниться в контейнере библиотеки.
 
 ### 2. Зависимости
 

@@ -8,14 +8,14 @@
 namespace
 {
 
-struct RootModule {};
-struct DependentModule {};
-struct MissingModule {};
-struct CycleModuleA {};
-struct CycleModuleB {};
-struct FirstModule {};
-struct SecondModule {};
-struct ThirdModule {};
+struct RootModule { MODULE_MAKE_HASH(RootModule) };
+struct DependentModule { MODULE_MAKE_HASH(DependentModule) };
+struct MissingModule { MODULE_MAKE_HASH(MissingModule) };
+struct CycleModuleA { MODULE_MAKE_HASH(CycleModuleA) };
+struct CycleModuleB { MODULE_MAKE_HASH(CycleModuleB) };
+struct FirstModule { MODULE_MAKE_HASH(FirstModule) };
+struct SecondModule { MODULE_MAKE_HASH(SecondModule) };
+struct ThirdModule { MODULE_MAKE_HASH(ThirdModule) };
 
 std::vector<std::string> events;
 
@@ -84,8 +84,8 @@ TEST_F(GraphResolverFixture, CompileIgnoresDuplicateDependencyEntries)
             return static_cast<void*>(new RootModule);
         }));
 
-    const gr_modid_t root_id = hash_string(GET_TYPE_NAME(RootModule));
-    const gr_modid_t dependent_id = hash_string(GET_TYPE_NAME(DependentModule));
+    const gr_modid_t root_id = RootModule::ID;
+    const gr_modid_t dependent_id = DependentModule::ID;
     std::array<gr_modid_t, 2> duplicated_deps = {root_id, root_id};
 
     gr_ModuleSlotDescriptor desc{};

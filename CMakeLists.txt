@@ -31,6 +31,7 @@ target_sources(graph_resolver
         src/module_slot.cpp
         src/core.cpp
         src/module_slot_desc.cpp
+        include/graph_resolver/api/mod_id.h
 
     PUBLIC
         FILE_SET public_headers
@@ -47,7 +48,6 @@ target_sources(graph_resolver
 
             include/graph_resolver/utils/nameof.hpp
             include/graph_resolver/utils/macro.h
-            include/graph_resolver/utils/hash_string.h
 )
 
 target_include_directories(graph_resolver
