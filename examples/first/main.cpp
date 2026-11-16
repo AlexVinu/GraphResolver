@@ -10,7 +10,7 @@ using namespace std;
 class Logger
 {
 public:
-    MODULE_MAKE_HASH(Logger)
+    CREATE_MODULE(Logger)
 
     Logger(string prog_name)
         {std::cout << "Logger constructor! Program name: " << prog_name <<endl;}
@@ -21,7 +21,7 @@ public:
 class Window
 {
 public:
-    MODULE_MAKE_HASH(Window)
+    CREATE_MODULE(Window)
 
     Window(){std::cout << "Window constructor!\n";}
     ~Window(){std::cout << "Window destructor!\n";}
@@ -32,7 +32,7 @@ public:
 class Render
 {
 public:
-    MODULE_MAKE_HASH(Render)
+    CREATE_MODULE(Render)
 
     Render(Window* w_ptr){std::cout << "Render constructor! Window module ptr: " <<w_ptr << endl;}
     ~Render(){std::cout << "Render destructor!\n";}
@@ -43,7 +43,7 @@ public:
 class Audio
 {
 public:
-    MODULE_MAKE_HASH(Audio)
+    CREATE_MODULE(Audio)
 
     Audio(){std::cout << "Audio constructorr!\n";}
     ~Audio(){std::cout << "Audio destructor!\n";}
@@ -53,7 +53,7 @@ public:
 class Input
 {
 public:
-    MODULE_MAKE_HASH(Input)
+    CREATE_MODULE(Input)
 
     Input(Window* window){std::cout << "Input constructor! Window module ptr: " << window << endl;}
     ~Input(){std::cout << "Input destructor!\n";}
@@ -63,7 +63,7 @@ public:
 class Physics
 {
 public:
-    MODULE_MAKE_HASH(Physics)
+    CREATE_MODULE(Physics)
 
     Physics(Logger* logger){std::cout << "Physics constructor! Logger module ptr: " << logger << endl;}
     ~Physics(){std::cout << "Physics destructor!\n";}
@@ -73,7 +73,7 @@ public:
 class Scene
 {
 public:
-    MODULE_MAKE_HASH(Scene)
+    CREATE_MODULE(Scene)
 
     Scene(Render* render, Physics* physics){
         std::cout << "Scene constructor! Render module ptr: " << render
@@ -86,7 +86,7 @@ public:
 class Game
 {
 public:
-    MODULE_MAKE_HASH(Game)
+    CREATE_MODULE(Game)
 
     Game(Scene* scene, Input* input, Audio* audio){
         std::cout << "Game constructor! Scene module ptr: " << scene
@@ -100,7 +100,7 @@ public:
 class EngineStats
 {
 public:
-    MODULE_MAKE_HASH(EngineStats)
+    CREATE_MODULE(EngineStats)
 
     EngineStats(Render* render, Physics* physics){
         std::cout << "EngineStats constructor! Render module ptr: " << render

@@ -19,7 +19,7 @@ typedef struct window_api
 
 typedef struct window_adapter
 {
-    MODULE_MAKE_HASH(window)
+    CREATE_MODULE(window)
 
     const window_api* g_window_api;
     window* g_window;
@@ -35,7 +35,7 @@ typedef struct render_api
 
 typedef struct render_adapter
 {
-    MODULE_MAKE_HASH(render)
+    CREATE_MODULE(render)
 
     const render_api* g_render_api;
     render* g_render;
@@ -50,7 +50,7 @@ typedef struct audio_api
 
 typedef struct audio_adapter
 {
-    MODULE_MAKE_HASH(audio)
+    CREATE_MODULE(audio)
 
     const audio_api* g_audio_api;
     audio* g_audio;

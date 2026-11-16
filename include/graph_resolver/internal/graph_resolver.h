@@ -16,14 +16,14 @@ public:
         class T,
         typename DEPS = gr_TypeList<>,
         typename POSTDEPS = gr_TypeList<>
-        > requires gr_HasID<T>
+        > requires gr_IsModule<T>
     gr_GraphResult AddModule(
         gr_ConstructFn construct,
         gr_PostConstructFn post_construct = nullptr,
         gr_DestructFn destruct = gr_ModuleSlotDefaultDestruct<T>) 
     {
-        gr_modid_t indx = T::ID;
-        std::string_view view = GET_TYPE_NAME(T);
+        gr_modid_t indx = GET_MODULE_ID(T);
+        std::string_view view = GET_MODULE_NAME(T);
         if(HasModule(indx)){
             gr_GraphResult result{};
             result.code = gr_GraphErrorCode::DuplicateModuleID;
@@ -39,14 +39,14 @@ public:
     template<class T>
     T* GetModule()
     {
-        gr_modid_t indx(T::ID);
+        gr_modid_t indx(GET_MODULE_ID(T));
         return static_cast<T*>(GetModuleInt(indx));
     }
 
     template<class T>
     bool HasModule()
     {
-        gr_modid_t indx = T::ID;
+        gr_modid_t indx = GET_MODULE_ID(T);
         return HasModule(indx);
     }
 

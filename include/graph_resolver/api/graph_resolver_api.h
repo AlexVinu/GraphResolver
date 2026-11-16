@@ -31,8 +31,8 @@ gr_ModuleSlotDescriptor CreateModuleSlotDescriptor(
     desc.construct = construct;
     desc.post_construct = post_construct;
     desc.destruct = destruct;
-    desc.module_id = T::ID;
-    const std::string_view type_name = GET_TYPE_NAME(T);
+    desc.module_id = GET_MODULE_ID(T);
+    const std::string_view type_name = GET_MODULE_NAME(T);
     desc.type_name = {type_name.data(), type_name.size()};
     desc.deps = DEPS::get();
     desc.post_deps = POSTDEPS::get();
@@ -44,7 +44,7 @@ template<
     class T,
     typename DEPS = gr_TypeList<>,
     typename POSTDEPS = gr_TypeList<>
-    > requires gr_HasID<T>
+    > requires gr_IsModule<T>
 void AddModule(
     const gr_GraphResolverApi* graph_api,
     gr_GraphResolver* graph_resolver,
@@ -54,8 +54,8 @@ void AddModule(
     gr_DestructFnApi destruct)
 {
     *result = MakeGraphResult(gr_GraphErrorCode::Success);
-    gr_modid_t indx = T::ID;
-    std::string_view view = GET_TYPE_NAME(T);
+    gr_modid_t indx = GET_MODULE_ID(T);
+    std::string_view view = GET_MODULE_NAME(T);
     if(graph_api->has_module(graph_resolver, indx, nullptr)){
         result->code = gr_GraphErrorCode::DuplicateModuleID;
         result->SetModName(view);
@@ -72,13 +72,13 @@ void AddModule(
 template<class T>
 T* GetModule(const gr_GraphResolverApi* graph_api, gr_GraphResolver* graph_resolver, gr_GraphResult* result = nullptr)
 {
-    gr_modid_t indx(T::ID);
+    gr_modid_t indx(GET_MODULE_ID(T));
     return static_cast<T*>(graph_api->get_module_int(graph_resolver, indx, result));
 }
 
 template<class T>
 bool HasModule(const gr_GraphResolverApi* graph_api, gr_GraphResolver* graph_resolver, gr_GraphResult* result = nullptr)
 {
-    gr_modid_t indx(T::ID);
+    gr_modid_t indx(GET_MODULE_ID(T));
     return graph_api->has_module(graph_resolver, indx, result);
 }

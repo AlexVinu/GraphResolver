@@ -8,7 +8,7 @@ namespace
 
 struct ApiModule
 {
-    MODULE_MAKE_HASH(ApiService)
+    CREATE_MODULE(ApiService)
 
     int value = 42;
 };

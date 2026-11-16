@@ -11,7 +11,7 @@ using namespace std;
 class Logger
 {
 public:
-    MODULE_MAKE_HASH(Logger)
+    CREATE_MODULE(Logger)
 
     Logger(string prog_name)
         {std::cout << "Logger constructor! Program name: " << prog_name <<endl;}
@@ -22,7 +22,7 @@ public:
 class Window
 {
 public:
-    MODULE_MAKE_HASH(Window)
+    CREATE_MODULE(Window)
 
     Window(){std::cout << "Window constructor!\n";}
     ~Window(){std::cout << "Window destructor!\n";}
@@ -33,7 +33,7 @@ public:
 class Render
 {
 public:
-    MODULE_MAKE_HASH(Render)
+    CREATE_MODULE(Render)
 
     Render(Window* w_ptr){std::cout << "Render constructor! Window module ptr: " <<w_ptr << endl;}
     ~Render(){std::cout << "Render destructor!\n";}
@@ -43,7 +43,7 @@ public:
 class Audio
 {
 public:
-    MODULE_MAKE_HASH(Audio)
+    CREATE_MODULE(Audio)
 
     Audio(){std::cout << "Audio constructor!\n";}
     ~Audio(){std::cout << "Audio destructor!\n";}

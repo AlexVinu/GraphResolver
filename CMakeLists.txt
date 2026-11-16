@@ -45,9 +45,6 @@ target_sources(graph_resolver
             include/graph_resolver/api/graph_resolver_api.h
             include/graph_resolver/api/core.h
             include/graph_resolver/api/module_slot_desc.h
-
-            include/graph_resolver/utils/nameof.hpp
-            include/graph_resolver/utils/macro.h
 )
 
 target_include_directories(graph_resolver

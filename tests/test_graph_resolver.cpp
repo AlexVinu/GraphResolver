@@ -1,3 +1,4 @@
+#include "graph_resolver/api/core.h"
 #include "graph_resolver/internal/graph_resolver.h"
 
 #include <gtest/gtest.h>
@@ -8,14 +9,14 @@
 namespace
 {
 
-struct RootModule { MODULE_MAKE_HASH(RootModule) };
-struct DependentModule { MODULE_MAKE_HASH(DependentModule) };
-struct MissingModule { MODULE_MAKE_HASH(MissingModule) };
-struct CycleModuleA { MODULE_MAKE_HASH(CycleModuleA) };
-struct CycleModuleB { MODULE_MAKE_HASH(CycleModuleB) };
-struct FirstModule { MODULE_MAKE_HASH(FirstModule) };
-struct SecondModule { MODULE_MAKE_HASH(SecondModule) };
-struct ThirdModule { MODULE_MAKE_HASH(ThirdModule) };
+struct RootModule { CREATE_MODULE(RootModule) };
+struct DependentModule { CREATE_MODULE(DependentModule) };
+struct MissingModule { CREATE_MODULE(MissingModule) };
+struct CycleModuleA { CREATE_MODULE(CycleModuleA) };
+struct CycleModuleB { CREATE_MODULE(CycleModuleB) };
+struct FirstModule { CREATE_MODULE(FirstModule) };
+struct SecondModule { CREATE_MODULE(SecondModule) };
+struct ThirdModule { CREATE_MODULE(ThirdModule) };
 
 std::vector<std::string> events;
 
@@ -100,7 +101,7 @@ TEST_F(GraphResolverFixture, CompileIgnoresDuplicateDependencyEntries)
         delete static_cast<DependentModule*>(ptr);
     };
     desc.module_id = dependent_id;
-    const auto dependent_type_name = GET_TYPE_NAME(DependentModule);
+    const auto dependent_type_name = GET_MODULE_NAME(DependentModule);
     desc.type_name.data = dependent_type_name.data();
     desc.type_name.size = dependent_type_name.size();
     desc.deps = gr_ModIdView::From(duplicated_deps.data(), static_cast<gr_modcount_t>(duplicated_deps.size()));

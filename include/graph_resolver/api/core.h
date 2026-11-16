@@ -8,15 +8,17 @@
 #include <cstring>
 #include <cassert>
 #include <string_view>
+#include <string>
 
 #include "graph_resolver/api/mod_id.h"
-#include "graph_resolver/utils/macro.h"
 
 #if defined(_WIN32)
     #define CALL __cdecl
 #else
     #define CALL
 #endif
+
+using gr_modname_t = std::string;
 
 constexpr gr_modid_t hash_string(std::string_view str)
 {
@@ -56,8 +58,9 @@ constexpr gr_modid_t hash_string(std::string_view str)
     return { high, low };
 }
 
-#define MODULE_MAKE_HASH(X) \
-    inline static constexpr gr_modid_t ID = hash_string(#X);
+#define CREATE_MODULE(X)\
+    inline static constexpr gr_modid_t ID = hash_string(#X);\
+    inline static constexpr gr_modname_t NAME = #X; 
 
 template<typename T>
 concept gr_HasID = requires
@@ -67,6 +70,27 @@ concept gr_HasID = requires
         gr_modid_t
     >;
 };
+
+template<typename T>
+concept gr_HasName = requires 
+{
+    requires std::same_as<
+        std::remove_cvref_t<decltype(T::NAME)>,
+        gr_modname_t
+    >;
+};
+
+template<typename T>
+concept gr_IsModule = gr_HasID<T> && gr_HasName<T>;
+
+template<typename T> requires gr_IsModule<T>
+constexpr gr_modid_t gr_GetModuleId(){return T::ID;}
+
+template<typename T> requires gr_IsModule<T>
+constexpr auto gr_GetModuleName(){return T::NAME;}
+
+#define GET_MODULE_NAME(X) gr_GetModuleName<X>()
+#define GET_MODULE_ID(X) gr_GetModuleId<X>()
 
 using gr_modcount_t = uint64_t;
 

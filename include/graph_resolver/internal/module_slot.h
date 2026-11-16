@@ -39,7 +39,7 @@ gr_ModuleSlot* CreateModuleSlot(gr_ConstructFn construct,
     gr_DestructFn destruct)
 {
     return new gr_ModuleSlot(
-        GET_TYPE_NAME(T),
+        GET_MODULE_NAME(T),
         construct,
         post_construct,
         destruct,
